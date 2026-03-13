@@ -1,0 +1,40 @@
+services:
+
+  victim:
+    image: ubuntu:22.04
+    container_name: lab01-victim
+    command: sleep infinity
+    cap_add:
+      - NET_ADMIN
+    networks:
+      lab-net:
+        ipv4_address: 172.30.0.10
+
+  attacker:
+    image: kalilinux/kali-rolling
+    container_name: lab01-attacker
+    command: sleep infinity
+    cap_add:
+      - NET_ADMIN
+    sysctls:
+      net.ipv4.ip_forward: "1"
+    networks:
+      lab-net:
+        ipv4_address: 172.30.0.99
+
+  server:
+    image: python:3-alpine
+    container_name: lab01-server
+    command: sleep infinity
+    cap_add:
+      - NET_ADMIN
+    networks:
+      lab-net:
+        ipv4_address: 172.30.0.20
+
+networks:
+  lab-net:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.30.0.0/24

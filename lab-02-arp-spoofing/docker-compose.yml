@@ -1,0 +1,56 @@
+# ============================================================
+#  docker-compose.yml  –  Lab 02: ARP Spoofing
+#  Modul: Sichere Netzwerke | FOM Hochschule | SS 2026
+#
+#  Das Netzwerk wird von setup.sh erstellt (external: true).
+#  Das garantiert ein freies /24-Subnetz.
+# ============================================================
+
+services:
+
+  lab02-alice:
+    image: ubuntu:22.04
+    container_name: lab02-alice
+    cap_add:
+      - NET_ADMIN
+    sysctls:
+      # arp_accept=1: akzeptiert unaufgeforderte ARP-Replies (Gratuitous ARP)
+      # Ohne dies verwirft der Kernel alle gefälschten ARP-Replies von mallory
+      net.ipv4.conf.all.arp_accept: 1
+      net.ipv4.conf.default.arp_accept: 1
+    networks:
+      - lab02-net
+    command: sleep infinity
+    restart: "no"
+
+  lab02-gateway:
+    image: alpine:latest
+    container_name: lab02-gateway
+    cap_add:
+      - NET_ADMIN
+    sysctls:
+      net.ipv4.ip_forward: 1
+    networks:
+      - lab02-net
+    command: sleep infinity
+    restart: "no"
+
+  lab02-mallory:
+    image: kalilinux/kali-rolling
+    container_name: lab02-mallory
+    cap_add:
+      - NET_ADMIN
+      - NET_RAW
+      - SYS_PTRACE
+    sysctls:
+      net.ipv4.ip_forward: 1
+    privileged: true
+    networks:
+      - lab02-net
+    command: sleep infinity
+    restart: "no"
+
+networks:
+  lab02-net:
+    external: true
+    name: lab02-net

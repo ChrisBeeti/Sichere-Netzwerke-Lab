@@ -1,0 +1,914 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Zugriffsverfahren — FOM SS 2026</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --lc1:#854F0B;--lf1:#FAEEDA;--lt1:#633806;
+  --lc2:#3B6D11;--lf2:#EAF3DE;--lt2:#27500A;
+  --lc3:#0F6E56;--lf3:#E1F5EE;--lt3:#085041;
+  --lc4:#185FA5;--lf4:#E6F1FB;--lt4:#0C447C;
+  --lc6:#534AB7;--lf6:#EEEDFE;--lt6:#3C3489;
+  --color-background-primary:#ffffff;
+  --color-background-secondary:#f5f5f5;
+  --color-text-primary:#111;
+  --color-text-secondary:#555;
+  --color-text-tertiary:#888;
+  --color-border-primary:#bbb;
+  --color-border-secondary:#ddd;
+  --color-border-tertiary:#eee;
+  --border-radius-md:8px;
+  --border-radius-lg:12px;
+  --font-sans:system-ui,-apple-system,sans-serif;
+  --font-mono:'SF Mono',Consolas,monospace;
+}
+@media(prefers-color-scheme:dark){:root{
+  --lc1:#EF9F27;--lf1:#3d2200;--lt1:#FAEEDA;
+  --lc2:#97C459;--lf2:#1a3300;--lt2:#EAF3DE;
+  --lc3:#5DCAA5;--lf3:#003326;--lt3:#E1F5EE;
+  --lc4:#85B7EB;--lf4:#002966;--lt4:#E6F1FB;
+  --lc6:#AFA9EC;--lf6:#1e1966;--lt6:#EEEDFE;
+  --color-background-primary:#1a1a1a;
+  --color-background-secondary:#242424;
+  --color-text-primary:#f0f0f0;
+  --color-text-secondary:#aaa;
+  --color-text-tertiary:#666;
+  --color-border-primary:#444;
+  --color-border-secondary:#333;
+  --color-border-tertiary:#2a2a2a;
+}}
+
+body{font-family:var(--font-sans);background:var(--color-background-primary);color:var(--color-text-primary);padding:1.5rem 1rem 3rem}
+
+/* ── HEADER ── */
+.page-header{text-align:center;margin-bottom:1.75rem}
+.page-kicker{font-size:14px;letter-spacing:.1em;text-transform:uppercase;color:var(--color-text-tertiary);margin-bottom:5px;font-family:var(--font-mono)}
+.page-title{font-size:34px;font-weight:600;color:var(--color-text-primary)}
+.page-sub{font-size:17px;color:var(--color-text-secondary);margin-top:4px}
+
+/* ── LAYOUT ── */
+.main{display:grid;grid-template-columns:320px 1fr;gap:18px;align-items:start}
+@media(max-width:820px){.main{grid-template-columns:1fr}}
+
+/* ── TAXONOMY TREE ── */
+.tree-panel{background:var(--color-background-secondary);border:0.5px solid var(--color-border-tertiary);border-radius:var(--border-radius-lg);padding:1.25rem}
+.tree-root{font-size:12px;letter-spacing:.1em;text-transform:uppercase;color:var(--color-text-tertiary);font-family:var(--font-mono);margin-bottom:12px}
+.branch{margin-bottom:10px}
+.branch-head{display:flex;align-items:center;gap:8px;padding:8px 12px;border-radius:var(--border-radius-md);border:0.5px solid var(--color-border-secondary);background:var(--color-background-primary);margin-bottom:6px}
+.branch-icon{font-size:17px;flex-shrink:0}
+.branch-title{font-size:16px;font-weight:600;color:var(--color-text-primary)}
+.branch-tag{font-family:var(--font-mono);font-size:11px;padding:2px 7px;border-radius:3px;margin-left:auto;font-weight:600}
+
+/* sub-groups (synchron/asynchron) */
+.sub-group{margin-left:16px;margin-bottom:6px}
+.sub-label{display:flex;align-items:center;gap:5px;font-size:12px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--color-text-tertiary);font-family:var(--font-mono);margin-bottom:4px;padding-left:4px}
+.sub-label::before{content:'';width:12px;height:1px;background:var(--color-border-secondary)}
+
+/* method buttons */
+.meth{display:flex;align-items:center;gap:8px;width:100%;padding:8px 12px;border-radius:var(--border-radius-md);border:0.5px solid var(--color-border-tertiary);background:transparent;font-family:var(--font-sans);font-size:15px;color:var(--color-text-secondary);cursor:pointer;text-align:left;transition:all .15s;margin-bottom:3px;margin-left:16px}
+.meth:hover{background:var(--color-background-secondary);color:var(--color-text-primary);border-color:var(--color-border-secondary)}
+.meth.sel{font-weight:600;border-color:currentColor;background:inherit}
+.meth-dot{width:10px;height:10px;border-radius:50%;flex-shrink:0}
+.meth-abbr{font-family:var(--font-mono);font-size:12px;margin-left:auto;color:var(--color-text-tertiary)}
+
+/* ── RIGHT PANEL ── */
+.right-panel{display:flex;flex-direction:column;gap:14px}
+.viz-panel{background:var(--color-background-secondary);border:0.5px solid var(--color-border-tertiary);border-radius:var(--border-radius-lg);padding:1.25rem}
+.viz-header{display:flex;align-items:center;gap:12px;margin-bottom:12px;flex-wrap:wrap}
+.viz-icon{font-size:30px}
+.viz-name{font-size:22px;font-weight:700}
+.viz-tag{font-family:var(--font-mono);font-size:13px;font-weight:600;padding:3px 10px;border-radius:4px}
+.hint{font-family:var(--font-mono);font-size:13px;color:var(--color-text-tertiary);margin-bottom:8px;text-align:center}
+.canvas-wrap{background:var(--color-background-primary);border:0.5px solid var(--color-border-tertiary);border-radius:var(--border-radius-md);overflow:hidden}
+canvas{display:block;width:100%;height:240px}
+
+/* ── INFO CARDS ── */
+.info-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.info-card{background:var(--color-background-primary);border:0.5px solid var(--color-border-secondary);border-radius:var(--border-radius-lg);padding:1.1rem}
+.info-card-title{font-family:var(--font-mono);font-size:11px;text-transform:uppercase;letter-spacing:.08em;color:var(--color-text-tertiary);margin-bottom:5px}
+.info-card-val{font-size:15px;color:var(--color-text-primary);line-height:1.5}
+.pro-box,.con-box{border-radius:var(--border-radius-md);padding:10px 12px;font-size:14px;line-height:1.6}
+.pro-box{background:var(--lf2);border:0.5px solid var(--lc2)}
+.pro-box .lab{font-family:var(--font-mono);font-size:11px;text-transform:uppercase;font-weight:700;color:var(--lc2);margin-bottom:4px}
+.con-box{background:var(--lf1);border:0.5px solid var(--lc1)}
+.con-box .lab{font-family:var(--font-mono);font-size:11px;text-transform:uppercase;font-weight:700;color:var(--lc1);margin-bottom:4px}
+@media(prefers-color-scheme:dark){
+  .pro-box{color:var(--lt2)}.con-box{color:var(--lt1)}
+}
+
+/* demo button */
+.ctrl-row{display:flex;gap:8px;align-items:center;margin-bottom:8px;flex-wrap:wrap}
+.cbtn{cursor:pointer;padding:8px 20px;border-radius:var(--border-radius-md);border:1px solid var(--color-border-secondary);background:var(--color-background-primary);color:var(--color-text-secondary);font-size:15px;font-family:var(--font-sans);transition:all .15s;font-weight:500}
+.cbtn:hover{background:var(--color-background-secondary);color:var(--color-text-primary)}
+.cbtn.go{background:var(--lc3);color:#fff;border-color:var(--lc3);font-weight:700}
+.status{font-family:var(--font-mono);font-size:13px;color:var(--color-text-tertiary)}
+
+.idle-msg{text-align:center;color:var(--color-text-tertiary);padding:3rem 1rem}
+.idle-msg .big{font-size:40px;margin-bottom:10px}
+.idle-msg .txt{font-size:17px}
+
+.footer{text-align:center;margin-top:14px;font-size:14px;color:var(--color-text-tertiary);font-family:var(--font-mono)}
+</style>
+</head>
+<body>
+
+<div class="page-header">
+  <div class="page-kicker">Sichere Netzwerke · SS 2026 · FOM Hochschule</div>
+  <div class="page-title">LAN & MAN Zugriffsverfahren</div>
+  <div class="page-sub">Sicherungsschicht · Medienzuteilung — Interaktive Übersicht</div>
+</div>
+
+<div class="main">
+
+  <!-- ═══ TAXONOMY TREE ═══ -->
+  <div class="tree-panel">
+    <div class="tree-root">Medienzuteilung</div>
+
+    <!-- MULTIPLEXING -->
+    <div class="branch">
+      <div class="branch-head" style="background:var(--lf4);border-color:var(--lc4)">
+        <span class="branch-icon">📶</span>
+        <span class="branch-title" style="color:var(--lc4)">Multiplexing</span>
+        <span class="branch-tag" style="background:var(--lf4);color:var(--lc4);border:0.5px solid var(--lc4)">Kanal</span>
+      </div>
+      <div class="sub-group">
+        <div class="sub-label">Synchron</div>
+        <button class="meth M4 sel" onclick="sel(this,'tdma')">
+          <span class="meth-dot" style="background:var(--lc4)"></span>
+          Zeitmultiplex<span class="meth-abbr">TDMA</span>
+        </button>
+        <button class="meth M4" onclick="sel(this,'fdma')">
+          <span class="meth-dot" style="background:var(--lc4)"></span>
+          Frequenzmultiplex<span class="meth-abbr">FDMA</span>
+        </button>
+        <button class="meth M4" onclick="sel(this,'cdma')">
+          <span class="meth-dot" style="background:var(--lc4)"></span>
+          Codemultiplex<span class="meth-abbr">CDMA</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- KONKURRIERENDER ZUGRIFF -->
+    <div class="branch">
+      <div class="branch-head" style="background:var(--lf1);border-color:var(--lc1)">
+        <span class="branch-icon">⚡</span>
+        <span class="branch-title" style="color:var(--lc1)">Konkurrierender Zugriff</span>
+        <span class="branch-tag" style="background:var(--lf1);color:var(--lc1);border:0.5px solid var(--lc1)">Asynchron</span>
+      </div>
+      <div class="sub-group">
+        <button class="meth M1" onclick="sel(this,'csmacd')">
+          <span class="meth-dot" style="background:var(--lc1)"></span>
+          CSMA/CD<span class="meth-abbr">Ethernet</span>
+        </button>
+        <button class="meth M1" onclick="sel(this,'csmaca')">
+          <span class="meth-dot" style="background:var(--lc1)"></span>
+          CSMA/CA<span class="meth-abbr">WLAN</span>
+        </button>
+        <button class="meth M1" onclick="sel(this,'aloha')">
+          <span class="meth-dot" style="background:var(--lc1)"></span>
+          ALOHA<span class="meth-abbr">Funknetz</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- GEREGELTER ZUGRIFF -->
+    <div class="branch">
+      <div class="branch-head" style="background:var(--lf2);border-color:var(--lc2)">
+        <span class="branch-icon">🎫</span>
+        <span class="branch-title" style="color:var(--lc2)">Geregelter Zugriff</span>
+        <span class="branch-tag" style="background:var(--lf2);color:var(--lc2);border:0.5px solid var(--lc2)">Geregelt</span>
+      </div>
+      <div class="sub-group">
+        <div class="sub-label">Synchron</div>
+        <button class="meth M2" onclick="sel(this,'polling')">
+          <span class="meth-dot" style="background:var(--lc2)"></span>
+          Polling<span class="meth-abbr">Zentral</span>
+        </button>
+        <div class="sub-label">Asynchron</div>
+        <button class="meth M2" onclick="sel(this,'token')">
+          <span class="meth-dot" style="background:var(--lc2)"></span>
+          Token Passing<span class="meth-abbr">Token Ring</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══ RIGHT PANEL ═══ -->
+  <div class="right-panel">
+
+    <!-- Visualization -->
+    <div class="viz-panel" id="viz-panel">
+      <div id="idle-state" class="idle-msg">
+        <div class="big">📡</div>
+        <div class="txt">Methode auswählen</div>
+      </div>
+      <div id="active-state" style="display:none">
+        <div class="viz-header">
+          <span class="viz-icon" id="v-icon"></span>
+          <div>
+            <div class="viz-name" id="v-name"></div>
+            <div style="font-size:14px;color:var(--color-text-tertiary);margin-top:2px" id="v-full"></div>
+          </div>
+          <span class="viz-tag" id="v-tag"></span>
+        </div>
+        <div class="ctrl-row">
+          <button class="cbtn go" onclick="startAnim()">▶ Animation</button>
+          <button class="cbtn" onclick="stopAnim()">⏹ Stop</button>
+          <span class="status" id="status">Bereit</span>
+        </div>
+        <div class="hint" id="v-hint"></div>
+        <div class="canvas-wrap">
+          <canvas id="c" width="700" height="240"></canvas>
+        </div>
+      </div>
+    </div>
+
+    <!-- Info Cards -->
+    <div id="info-area" style="display:none">
+      <div class="info-grid" style="margin-bottom:10px">
+        <div class="info-card">
+          <div class="info-card-title">Prinzip</div>
+          <div class="info-card-val" id="i-prinzip"></div>
+        </div>
+        <div class="info-card">
+          <div class="info-card-title">Einsatz</div>
+          <div class="info-card-val" id="i-einsatz"></div>
+        </div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+        <div class="pro-box"><div class="lab">✓ Vorteile</div><div id="i-pro"></div></div>
+        <div class="con-box"><div class="lab">✗ Nachteile</div><div id="i-con"></div></div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<div class="footer">LAN & MAN Zugriffsverfahren · SS 2026 · Christian Böttger M.Sc.</div>
+
+<script>
+/* ══════════════════════════════════
+   DATA
+══════════════════════════════════ */
+const DATA = {
+  tdma:{
+    name:'TDMA', full:'Time Division Multiple Access — Zeitmultiplex',
+    icon:'⏱️', tag:'Synchron · Multiplex',
+    colVar:'--lc4', bgVar:'--lf4',
+    hint:'Jede Station bekommt feste Zeitschlitze im Rund-Robin-Verfahren',
+    prinzip:'Das Medium wird in feste Zeitschlitze aufgeteilt. Jede Station sendet ausschließlich in ihrem zugewiesenen Slot — unabhängig davon, ob sie Daten hat.',
+    einsatz:'GSM / UMTS Mobilfunk · ISDN · Satellitenkommunikation · Bluetooth (vereinfacht)',
+    pro:'Kollisionsfrei · Deterministisch · Faire Aufteilung',
+    con:'Ungenutzte Slots verschwenden Bandbreite · Feste Zuteilung unflexibel',
+    draw:'drawTDMA',
+  },
+  fdma:{
+    name:'FDMA', full:'Frequency Division Multiple Access — Frequenzmultiplex',
+    icon:'📻', tag:'Synchron · Multiplex',
+    colVar:'--lc4', bgVar:'--lf4',
+    hint:'Jede Station sendet auf einer eigenen Frequenz gleichzeitig',
+    prinzip:'Das Frequenzband wird in Teilbänder aufgeteilt. Jeder Station ist ein exklusives Frequenzband zugewiesen — alle senden gleichzeitig auf verschiedenen Frequenzen.',
+    einsatz:'UKW-Radio · Erstes Mobilfunknetz (1G) · Kabelfernsehen · DSL (Upstream/Downstream)',
+    pro:'Keine Kollisionen · Gleichzeitige Übertragung · Einfach realisierbar',
+    con:'Frequenzguard-Bands nötig · Feste Zuteilung unflexibel · Bandbreitenverschwendung bei Inaktivität',
+    draw:'drawFDMA',
+  },
+  cdma:{
+    name:'CDMA', full:'Code Division Multiple Access — Codemultiplex',
+    icon:'🔐', tag:'Synchron · Multiplex',
+    colVar:'--lc4', bgVar:'--lf4',
+    hint:'Alle Stationen senden gleichzeitig auf demselben Kanal — unterschiedliche Codes trennen sie',
+    prinzip:'Alle Stationen nutzen denselben Kanal gleichzeitig. Jede Station verwendet einen eindeutigen orthogonalen Code (Spreizcode), der Sender und Empfänger identifiziert.',
+    einsatz:'3G (UMTS / CDMA2000) · GPS · WLAN 802.11b (teilweise)',
+    pro:'Alle senden gleichzeitig · Schwer abhörbar · Gute Bandbreitenausnutzung',
+    con:'Komplexe Signalverarbeitung nötig · Leistungsregelung kritisch · Hoher Rechenaufwand',
+    draw:'drawCDMA',
+  },
+  csmacd:{
+    name:'CSMA/CD', full:'Carrier Sense Multiple Access / Collision Detection',
+    icon:'⚡', tag:'Asynchron · Konkurrierend',
+    colVar:'--lc1', bgVar:'--lf1',
+    hint:'Horchen → Senden → Kollision erkannt → Jam-Signal → Backoff → Retry',
+    prinzip:'Vor dem Senden wird das Medium abgehört (Carrier Sense). Bei Freiheit wird gesendet. Kollisionen werden während der Übertragung erkannt, ein Jam-Signal gesendet und die Übertragung nach zufälligem Backoff wiederholt.',
+    einsatz:'Classic Ethernet (10/100 Mbit/s) · 10BASE-T · IEEE 802.3',
+    pro:'Einfach implementiert · Selbstorganisierend · Hohe Auslastung bei geringem Verkehr',
+    con:'Kollisionen reduzieren Durchsatz · Nicht deterministisch · Nur bei Halbduplex',
+    draw:'drawCSMACD',
+  },
+  csmaca:{
+    name:'CSMA/CA', full:'Carrier Sense Multiple Access / Collision Avoidance',
+    icon:'📶', tag:'Asynchron · Konkurrierend',
+    colVar:'--lc1', bgVar:'--lf1',
+    hint:'Horchen → Warten (IFS) → Zufälliger Backoff → Senden → ACK warten',
+    prinzip:'Da Kollisionserkennung bei WLAN nicht möglich ist, werden Kollisionen durch Random Backoff und DIFS/SIFS-Interframe-Spacing vermieden. Optional: RTS/CTS-Handshake vor Datenübertragung.',
+    einsatz:'WLAN / Wi-Fi · IEEE 802.11 (alle Varianten a/b/g/n/ac/ax)',
+    pro:'Für Funknetz geeignet · RTS/CTS löst Hidden-Station-Problem · Weit verbreitet',
+    con:'Mehr Overhead als CSMA/CD · Kollisionen nicht ausgeschlossen · Höhere Latenz als TDMA',
+    draw:'drawCSMACA',
+  },
+  aloha:{
+    name:'ALOHA', full:'Pure ALOHA / Slotted ALOHA',
+    icon:'🌋', tag:'Asynchron · Konkurrierend',
+    colVar:'--lc1', bgVar:'--lf1',
+    hint:'Einfach senden — Kollision → Zufälliger Delay → Retry',
+    prinzip:'Stationen senden, wann immer sie Daten haben (Pure ALOHA). Bei Slotted ALOHA darf nur zu definierten Zeitschlitz-Anfängen gesendet werden. Max. Durchsatz: 18% (Pure) bzw. 37% (Slotted).',
+    einsatz:'Frühe Satellitenkommunikation · RFID-Systeme · Erste Paketvermittlungsnetze',
+    pro:'Extrem einfach · Kein Synchronisationsaufwand · Minimaler Protokoll-Overhead',
+    con:'Sehr hohe Kollisionsrate · Geringer max. Durchsatz · Nur für sporadischen Verkehr',
+    draw:'drawALOHA',
+  },
+  polling:{
+    name:'Polling', full:'Zentrales Abfragesystem (Master-Slave)',
+    icon:'🗳️', tag:'Synchron · Geregelter Zugriff',
+    colVar:'--lc2', bgVar:'--lf2',
+    hint:'Zentralstation fragt jede Station der Reihe nach ab — nur die befragte Station darf senden',
+    prinzip:'Eine Zentralstation (Master) fragt alle Teilnehmer der Reihe nach ab (Poll). Nur die abgefragte Station darf antworten und senden. Der Master kontrolliert den gesamten Medienzugriff.',
+    einsatz:'Mainframe-Netze (IBM SNA) · SCADA/Feldbus (Modbus RTU) · altes Token-Bus',
+    pro:'Kollisionsfrei · Deterministisch · Zuverlässig bei wenig Teilnehmern',
+    con:'Abhängigkeit vom Master (Single Point of Failure) · Polling-Overhead · Skaliert schlecht',
+    draw:'drawPolling',
+  },
+  token:{
+    name:'Token Passing', full:'Token Ring / Token Bus — verteilte Zugriffssteuerung',
+    icon:'🎫', tag:'Asynchron · Geregelter Zugriff',
+    colVar:'--lc2', bgVar:'--lf2',
+    hint:'Nur wer das Token hält, darf senden — dann Token weitergeben',
+    prinzip:'Ein spezielles Steuerpaket (Token) kreist durch das Netz. Nur die Station, die das Token besitzt, darf senden. Nach dem Senden (oder bei Nichtsenden) wird das Token an den Nachbarn weitergegeben.',
+    einsatz:'Token Ring (IEEE 802.5) · FDDI (Glasfaserring) · Profibus (Industrie)',
+    pro:'Kollisionsfrei · Faire Zugriffsverteilung · Deterministisch (bekannte max. Wartezeit)',
+    con:'Token-Verlust bricht Netz (Überwachung nötig) · Mehr Overhead als CSMA/CD · Langsamer Aufbau',
+    draw:'drawToken',
+  },
+};
+
+/* ══════════════════════════════════
+   STATE
+══════════════════════════════════ */
+let current = null;
+let animId = null;
+let t = 0; // global time counter
+
+/* ══════════════════════════════════
+   SELECTION
+══════════════════════════════════ */
+function sel(btn, id) {
+  document.querySelectorAll('.meth').forEach(b => b.classList.remove('sel'));
+  btn.classList.add('sel');
+  stopAnim();
+  current = DATA[id];
+  showActive();
+}
+
+function showActive() {
+  const d = current;
+  document.getElementById('idle-state').style.display = 'none';
+  document.getElementById('active-state').style.display = 'block';
+  document.getElementById('info-area').style.display = 'block';
+
+  const col = getVar(d.colVar), bg = getVar(d.bgVar);
+  document.getElementById('v-icon').textContent = d.icon;
+  document.getElementById('v-name').textContent = d.name;
+  document.getElementById('v-name').style.color = col;
+  document.getElementById('v-full').textContent = d.full;
+  const tag = document.getElementById('v-tag');
+  tag.textContent = d.tag; tag.style.background = bg; tag.style.color = col;
+  tag.style.border = `0.5px solid ${col}`;
+  document.getElementById('v-hint').textContent = d.hint;
+  document.getElementById('i-prinzip').textContent = d.prinzip;
+  document.getElementById('i-einsatz').textContent = d.einsatz;
+  document.getElementById('i-pro').textContent = d.pro;
+  document.getElementById('i-con').textContent = d.con;
+  document.getElementById('status').textContent = 'Bereit';
+
+  // draw static state
+  drawStatic();
+}
+
+function getVar(name) {
+  return getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+}
+
+/* ══════════════════════════════════
+   CANVAS HELPERS
+══════════════════════════════════ */
+const canvas = () => document.getElementById('c');
+const ctx = () => { const c = canvas(); c.width = c.clientWidth * devicePixelRatio; c.height = 240 * devicePixelRatio; return c.getContext('2d'); }
+
+function css(name) { return getComputedStyle(document.documentElement).getPropertyValue(name).trim(); }
+const C = {
+  bg:   ()=>css('--color-background-primary'),
+  bg2:  ()=>css('--color-background-secondary'),
+  bord: ()=>css('--color-border-secondary'),
+  txt:  ()=>css('--color-text-primary'),
+  txt2: ()=>css('--color-text-secondary'),
+  txt3: ()=>css('--color-text-tertiary'),
+};
+
+function clearCanvas() {
+  const c = canvas(), x = c.getContext('2d');
+  c.width = c.clientWidth * devicePixelRatio;
+  c.height = 240 * devicePixelRatio;
+  x.scale(devicePixelRatio, devicePixelRatio);
+  x.fillStyle = C.bg();
+  x.fillRect(0, 0, c.clientWidth, 240);
+  return x;
+}
+
+function label(x, ctx, text, y, color, size=11, bold=false) {
+  ctx.font = `${bold?'700':'400'} ${size}px SF Mono,Consolas,monospace`;
+  ctx.fillStyle = color;
+  ctx.textAlign = 'left';
+  ctx.fillText(text, x, y);
+}
+
+/* ══════════════════════════════════
+   DRAW FUNCTIONS
+══════════════════════════════════ */
+const STATIONS = ['A', 'B', 'C', 'D'];
+const COLORS = ['#EF9F27','#97C459','#5DCAA5','#85B7EB'];
+
+function drawStations(x, startY, gap, radius=14) {
+  return; // drawn per method
+}
+
+function drawTDMA(phase) {
+  const x = clearCanvas();
+  const W = canvas().clientWidth, H = 240;
+  const col = css('--lc4');
+  const slotW = (W - 80) / (STATIONS.length * 3);
+  const trackH = 36, startX = 60, topY = 50;
+
+  // Title row
+  x.font = '600 13px SF Mono,Consolas,monospace';
+  x.fillStyle = C.txt3(); x.textAlign = 'left';
+  x.fillText('Zeit →', startX, 30);
+
+  STATIONS.forEach((s, i) => {
+    const y = topY + i * (trackH + 8);
+    // station label
+    x.font = '700 13px SF Mono,Consolas,monospace';
+    x.fillStyle = COLORS[i]; x.textAlign = 'right';
+    x.fillText(`Station ${s}`, startX - 8, y + trackH/2 + 5);
+    // track background
+    x.fillStyle = C.bg2();
+    x.roundRect(startX, y, W - startX - 10, trackH, 4);
+    x.fill();
+    // slots
+    for (let slot = 0; slot < STATIONS.length * 3; slot++) {
+      const owner = slot % STATIONS.length;
+      const sx = startX + slot * slotW;
+      const active = (owner === i);
+      const animSlot = Math.floor(phase / 18) % (STATIONS.length * 3);
+      const sending = (slot === animSlot && active);
+      x.globalAlpha = active ? 1 : 0.15;
+      x.fillStyle = COLORS[owner];
+      x.roundRect(sx + 2, y + 2, slotW - 4, trackH - 4, 3);
+      x.fill();
+      if (sending) {
+        x.globalAlpha = 1;
+        x.strokeStyle = '#fff';
+        x.lineWidth = 2;
+        x.roundRect(sx + 2, y + 2, slotW - 4, trackH - 4, 3);
+        x.stroke();
+      }
+      x.globalAlpha = 1;
+    }
+  });
+
+  // time cursor
+  const slot = Math.floor(phase / 18) % (STATIONS.length * 3);
+  const cx2 = startX + slot * slotW + slotW / 2;
+  x.strokeStyle = col; x.lineWidth = 2;
+  x.setLineDash([4, 3]);
+  x.beginPath(); x.moveTo(cx2, topY - 10); x.lineTo(cx2, topY + STATIONS.length * (trackH + 8)); x.stroke();
+  x.setLineDash([]);
+  x.fillStyle = col; x.font = '600 12px SF Mono,Consolas,monospace';
+  x.textAlign = 'center';
+  x.fillText(`Slot ${slot + 1}`, cx2, topY - 14);
+
+  // status
+  const owner = slot % STATIONS.length;
+  document.getElementById('status').textContent = `Station ${STATIONS[owner]} sendet in Slot ${slot + 1}`;
+}
+
+function drawFDMA(phase) {
+  const x = clearCanvas();
+  const W = canvas().clientWidth, H = 240;
+  const bandH = (H - 60) / STATIONS.length;
+  const startX = 60, startY = 30;
+
+  x.font = '600 12px SF Mono,Consolas,monospace';
+  x.fillStyle = C.txt3(); x.textAlign = 'left';
+  x.fillText('Frequenz (f) →', startX, 20);
+  x.fillText('Zeit →', startX, H - 8);
+
+  STATIONS.forEach((s, i) => {
+    const y = startY + i * (bandH + 4);
+    const frac = (Math.sin(phase * 0.03 + i * 1.3) + 1) / 2 * 0.6 + 0.2;
+    // band bg
+    x.fillStyle = C.bg2();
+    x.roundRect(startX, y, W - startX - 10, bandH, 4); x.fill();
+    // signal wave
+    x.strokeStyle = COLORS[i]; x.lineWidth = 2.5;
+    x.beginPath();
+    for (let px = 0; px < W - startX - 10; px++) {
+      const amp = bandH * 0.38 * frac;
+      const freq = (i + 1) * 0.06 + i * 0.02;
+      const yy = y + bandH / 2 + Math.sin((px + phase * (i + 1) * 0.5) * freq) * amp;
+      if (px === 0) x.moveTo(startX + px, yy); else x.lineTo(startX + px, yy);
+    }
+    x.stroke();
+    // label
+    x.font = '700 12px SF Mono,Consolas,monospace';
+    x.fillStyle = COLORS[i]; x.textAlign = 'right';
+    x.fillText(`f${i + 1} / St.${s}`, startX - 6, y + bandH / 2 + 5);
+  });
+  document.getElementById('status').textContent = 'Alle Stationen senden gleichzeitig auf eigener Frequenz';
+}
+
+function drawCDMA(phase) {
+  const x = clearCanvas();
+  const W = canvas().clientWidth, H = 240;
+  const col = css('--lc4');
+  const midY = H / 2;
+
+  // Chip sequences (simplified visualization)
+  const codes = [
+    [1, -1, 1, -1, 1, -1, 1, -1],
+    [1, 1, -1, -1, 1, 1, -1, -1],
+    [1, 1, 1, 1, -1, -1, -1, -1],
+    [1, -1, -1, 1, 1, -1, -1, 1],
+  ];
+  const chipW = (W - 120) / 8;
+
+  STATIONS.forEach((s, si) => {
+    const y = 30 + si * 50;
+    x.font = '700 12px SF Mono,Consolas,monospace';
+    x.fillStyle = COLORS[si]; x.textAlign = 'right';
+    x.fillText(`St.${s}`, 55, y + 16);
+    x.font = '10px SF Mono,Consolas,monospace';
+    x.fillStyle = C.txt3();
+    x.fillText('Spreizcode:', 58, y + 28);
+
+    codes[si].forEach((bit, ci) => {
+      const sending = Math.floor(phase / 12) % 2 === 0;
+      const sx = 60 + (ci * chipW);
+      x.fillStyle = bit > 0 ? COLORS[si] : C.bg2();
+      x.globalAlpha = sending ? 1 : 0.3;
+      x.roundRect(sx + 1, y, chipW - 2, 18, 2); x.fill();
+      x.globalAlpha = 1;
+      x.font = '700 9px SF Mono,Consolas,monospace';
+      x.fillStyle = bit > 0 ? '#fff' : C.txt3();
+      x.textAlign = 'center';
+      x.fillText(bit > 0 ? '+1' : '-1', sx + chipW / 2, y + 13);
+    });
+  });
+
+  // combined channel indicator
+  x.font = '600 12px SF Mono,Consolas,monospace';
+  x.fillStyle = col; x.textAlign = 'left';
+  x.fillText('→ Gemeinsamer Kanal: alle Codes überlagert', 60, H - 12);
+  x.fillStyle = C.bord();
+  x.roundRect(60, H - 36, W - 70, 18, 4); x.fill();
+  for (let i = 0; i < W - 70; i += 4) {
+    const v = Math.sin(i * 0.3 + phase * 0.1) * 0.5 + Math.cos(i * 0.7 + phase * 0.07) * 0.3;
+    x.fillStyle = COLORS[Math.abs(Math.round(v * 3)) % 4];
+    x.fillRect(60 + i, H - 36, 3, 18);
+  }
+  document.getElementById('status').textContent = 'Alle Stationen senden gleichzeitig — Empfänger dekodiert per Spreizcode';
+}
+
+function drawCSMACD(phase) {
+  const x = clearCanvas();
+  const W = canvas().clientWidth, H = 240;
+  const col = css('--lc1');
+  const BUS_Y = H / 2, stGap = (W - 80) / (STATIONS.length - 1);
+  const tick = Math.floor(phase / 6);
+  const state = tick % 32; // 32-tick cycle
+
+  // BUS line
+  x.strokeStyle = C.bord(); x.lineWidth = 4;
+  x.lineCap = 'round';
+  x.beginPath(); x.moveTo(40, BUS_Y); x.lineTo(W - 10, BUS_Y); x.stroke();
+
+  STATIONS.forEach((s, i) => {
+    const sx = 40 + i * stGap;
+    // connector
+    x.strokeStyle = C.bord(); x.lineWidth = 2;
+    x.beginPath(); x.moveTo(sx, BUS_Y - 10); x.lineTo(sx, BUS_Y - 46); x.stroke();
+    // node
+    const col2 = COLORS[i];
+    x.fillStyle = col2;
+    x.beginPath(); x.arc(sx, BUS_Y - 58, 16, 0, Math.PI * 2); x.fill();
+    x.font = '700 12px SF Mono,Consolas,monospace';
+    x.fillStyle = '#fff'; x.textAlign = 'center';
+    x.fillText(s, sx, BUS_Y - 54);
+  });
+
+  // Simulate: A tries to send (state 0-5), B also (state 3-8) → collision (state 6-10), jam, backoff
+  let statusMsg = 'Medium frei — alle horchen';
+
+  if (state >= 0 && state < 4) {
+    // A sending
+    const prog = state / 4;
+    x.fillStyle = COLORS[0]; x.globalAlpha = 0.8;
+    x.beginPath(); x.arc(40 + prog * stGap * 0.8, BUS_Y - 4, 7, 0, Math.PI * 2); x.fill();
+    x.globalAlpha = 1;
+    statusMsg = 'Station A: Medium frei → sendet';
+  }
+  if (state >= 3 && state < 8) {
+    const prog = (state - 3) / 5;
+    // B also starts
+    x.fillStyle = COLORS[1]; x.globalAlpha = 0.8;
+    x.beginPath(); x.arc(40 + stGap + (1 - prog) * stGap * 0.4, BUS_Y + 4, 7, 0, Math.PI * 2); x.fill();
+    x.globalAlpha = 1;
+    if (state >= 3) statusMsg = 'Station B horcht — Medium scheint frei → sendet auch!';
+  }
+  if (state >= 7 && state < 14) {
+    // COLLISION
+    const cx2 = 40 + stGap * 0.6;
+    x.fillStyle = col; x.font = '700 16px sans-serif'; x.textAlign = 'center';
+    x.fillText('💥 COLLISION', cx2 + 40, BUS_Y - 72);
+    x.strokeStyle = col; x.lineWidth = 2; x.globalAlpha = 0.6;
+    x.beginPath(); x.arc(cx2 + 40, BUS_Y, (state - 7) * 10, 0, Math.PI * 2); x.stroke();
+    x.globalAlpha = 1;
+    statusMsg = 'Kollision erkannt → JAM-Signal → alle stoppen';
+  }
+  if (state >= 14 && state < 22) {
+    // Backoff
+    x.font = '600 13px SF Mono,Consolas,monospace';
+    x.fillStyle = col; x.textAlign = 'center';
+    x.fillText('⏳ Random Backoff', W / 2, BUS_Y - 18);
+    const bars = [state - 14, state - 16];
+    bars.forEach((b, i) => {
+      if (b > 0) {
+        x.fillStyle = COLORS[i];
+        x.roundRect(40 + i * stGap - 10, BUS_Y + 20, Math.min(b * 8, 60), 14, 3); x.fill();
+      }
+    });
+    statusMsg = 'Zufälliger Backoff — Timer A vs. Timer B';
+  }
+  if (state >= 22) {
+    // A wins retry
+    const prog = (state - 22) / 10;
+    x.fillStyle = COLORS[0]; x.globalAlpha = 0.9;
+    x.beginPath(); x.arc(40 + prog * W * 0.8, BUS_Y, 8, 0, Math.PI * 2); x.fill();
+    x.globalAlpha = 1;
+    statusMsg = 'Station A hat kürzeren Backoff → sendet erneut erfolgreich';
+  }
+  document.getElementById('status').textContent = statusMsg;
+}
+
+function drawCSMACA(phase) {
+  const x = clearCanvas();
+  const W = canvas().clientWidth, H = 240;
+  const col = css('--lc1');
+  const stY = [50, 120, 190], tick = Math.floor(phase / 8), state = tick % 28;
+
+  // timeline
+  x.strokeStyle = C.bord(); x.lineWidth = 1.5; x.setLineDash([4, 3]);
+  x.beginPath(); x.moveTo(60, 20); x.lineTo(W - 10, 20); x.stroke();
+  x.setLineDash([]);
+  x.font = '600 11px SF Mono,Consolas,monospace'; x.fillStyle = C.txt3(); x.textAlign = 'left';
+  x.fillText('Zeit →', 60, 15);
+
+  ['A', 'B', 'C'].forEach((s, i) => {
+    const y = stY[i], c2 = COLORS[i];
+    // label
+    x.font = '700 13px SF Mono,Consolas,monospace';
+    x.fillStyle = c2; x.textAlign = 'right';
+    x.fillText(`St.${s}`, 52, y + 18);
+    // track
+    x.fillStyle = C.bg2(); x.roundRect(60, y, W - 70, 30, 4); x.fill();
+  });
+
+  // Phases: 0-5 sense, 6-12 DIFS A, 13-16 backoff B/C, 17-24 A sends, 25-27 ACK
+  const phases = [
+    {start:0, end:5, label:'Medium frei — alle horchen', color:'#888'},
+    {start:6, end:12, label:'A wartet DIFS', color:COLORS[0]},
+    {start:12, end:17, label:'A: Backoff = 0 → sendet (B/C erhöhen Backoff)', color:COLORS[0]},
+    {start:17, end:24, label:'A überträgt Daten', color:COLORS[0]},
+    {start:24, end:28, label:'AP sendet ACK → Übertragung erfolgreich', color:'#5DCAA5'},
+  ];
+  const curPhase = phases.find(p => state >= p.start && state < p.end) || phases[0];
+
+  const barW = (W - 70) * Math.min((state % 7) / 6, 1);
+
+  if (state >= 6 && state < 28) {
+    const barX = 60 + (W - 70) * 0.1;
+    // DIFS indicator
+    x.fillStyle = COLORS[0]; x.globalAlpha = state < 13 ? 0.5 : 1;
+    x.roundRect(60, stY[0], barW * 1.5, 30, 4); x.fill();
+    x.globalAlpha = 1;
+    x.font = '700 11px SF Mono,Consolas,monospace'; x.fillStyle = '#fff'; x.textAlign = 'left';
+    x.fillText(state < 13 ? 'DIFS' : state < 17 ? 'Backoff=0' : state < 25 ? 'DATA' : 'ACK✓',
+      62, stY[0] + 20);
+  }
+  if (state >= 13) {
+    // B and C show backoff counters
+    [1, 2].forEach((si, idx) => {
+      const bo = 3 + idx * 2; // backoff values
+      x.fillStyle = COLORS[si]; x.globalAlpha = 0.35;
+      x.roundRect(60, stY[si], (W - 70) * 0.08, 30, 4); x.fill();
+      x.globalAlpha = 1;
+      x.font = '700 10px SF Mono,Consolas,monospace'; x.fillStyle = COLORS[si]; x.textAlign = 'left';
+      x.fillText(`Backoff=${bo}`, 62, stY[si] + 20);
+    });
+  }
+  // status
+  document.getElementById('status').textContent = curPhase.label;
+}
+
+function drawALOHA(phase) {
+  const x = clearCanvas();
+  const W = canvas().clientWidth, H = 240;
+  const col = css('--lc1');
+  const tick = Math.floor(phase / 5), N = 4;
+
+  // channel bar
+  const BAR_Y = H - 40, BAR_H = 22;
+  x.fillStyle = C.bg2(); x.roundRect(40, BAR_Y, W - 50, BAR_H, 4); x.fill();
+  x.font = '600 11px SF Mono,Consolas,monospace'; x.fillStyle = C.txt3(); x.textAlign = 'left';
+  x.fillText('Kanal', 2, BAR_Y + BAR_H / 2 + 4);
+
+  // stations send randomly
+  const sends = [
+    {start:2, end:8, st:0}, {start:5, end:11, st:1},
+    {start:10, end:16, st:2}, {start:14, end:20, st:3},
+    {start:18, end:24, st:0}, {start:22, end:26, st:2},
+  ];
+  const stY = [32, 80, 128, 176];
+  const cycTick = tick % 28;
+
+  STATIONS.forEach((s, i) => {
+    x.font = '700 13px SF Mono,Consolas,monospace';
+    x.fillStyle = COLORS[i]; x.textAlign = 'right';
+    x.fillText(`St.${s}`, 35, stY[i] + 16);
+    x.fillStyle = C.bg2(); x.roundRect(40, stY[i], W - 50, 24, 4); x.fill();
+  });
+
+  let collision = false;
+  const active = sends.filter(s => cycTick >= s.start && cycTick < s.end);
+  if (active.length > 1) collision = true;
+
+  active.forEach(ev => {
+    const prog = (cycTick - ev.start) / (ev.end - ev.start);
+    const px = 40 + prog * (W - 50);
+    x.fillStyle = collision ? col : COLORS[ev.st];
+    x.globalAlpha = 0.9;
+    x.roundRect(40, stY[ev.st], prog * (W - 50), 24, 4); x.fill();
+    x.globalAlpha = 1;
+    // channel packet
+    x.fillStyle = collision ? col : COLORS[ev.st];
+    x.globalAlpha = 0.8;
+    x.roundRect(40, BAR_Y, prog * (W - 50), BAR_H, 4); x.fill();
+    x.globalAlpha = 1;
+  });
+
+  if (collision) {
+    x.font = '700 14px sans-serif'; x.fillStyle = col; x.textAlign = 'center';
+    x.fillText('💥 Kollision!', W / 2, BAR_Y - 10);
+  }
+  document.getElementById('status').textContent =
+    collision ? 'Kollision! — beide Pakete verloren → Zufälliger Delay → Retry'
+    : active.length === 1 ? `Station ${STATIONS[active[0].st]} sendet`
+    : 'Stationen warten auf zufälligen Sendezeitpunkt';
+}
+
+function drawPolling(phase) {
+  const x = clearCanvas();
+  const W = canvas().clientWidth, H = 240;
+  const col = css('--lc2');
+  const tick = Math.floor(phase / 12), state = tick % (STATIONS.length * 2);
+  const current2 = Math.floor(state / 2);
+  const pollPhase = state % 2; // 0=poll going, 1=response coming
+
+  // central station
+  const CX = W / 2, CY = 50;
+  x.fillStyle = col; x.beginPath(); x.arc(CX, CY, 22, 0, Math.PI * 2); x.fill();
+  x.font = '700 12px SF Mono,Consolas,monospace'; x.fillStyle = '#fff'; x.textAlign = 'center';
+  x.fillText('Master', CX, CY + 4);
+
+  // outer stations
+  const R = 110, angStep = (2 * Math.PI) / STATIONS.length, startAng = -Math.PI / 2;
+  STATIONS.forEach((s, i) => {
+    const ang = startAng + i * angStep;
+    const sx = CX + R * Math.cos(ang), sy = CY + R * Math.sin(ang) + 80;
+    // line
+    x.strokeStyle = i === current2 ? COLORS[i] : C.bord();
+    x.lineWidth = i === current2 ? 2.5 : 1.5;
+    x.beginPath(); x.moveTo(CX, CY + 22); x.lineTo(sx, sy - 16); x.stroke();
+    // station node
+    x.fillStyle = i === current2 ? COLORS[i] : C.bg2();
+    x.beginPath(); x.arc(sx, sy, 16, 0, Math.PI * 2); x.fill();
+    x.strokeStyle = COLORS[i]; x.lineWidth = 2;
+    x.beginPath(); x.arc(sx, sy, 16, 0, Math.PI * 2); x.stroke();
+    x.font = `700 12px SF Mono,Consolas,monospace`;
+    x.fillStyle = i === current2 ? '#fff' : COLORS[i]; x.textAlign = 'center';
+    x.fillText(s, sx, sy + 4);
+
+    // Animated packet on active line
+    if (i === current2) {
+      const prog = pollPhase === 0
+        ? (phase % 12) / 12
+        : 1 - (phase % 12) / 12;
+      const px = CX + (sx - CX) * prog;
+      const py = (CY + 22) + (sy - 16 - CY - 22) * prog;
+      x.fillStyle = pollPhase === 0 ? col : COLORS[i];
+      x.beginPath(); x.arc(px, py, 8, 0, Math.PI * 2); x.fill();
+      x.font = '700 9px SF Mono,Consolas,monospace'; x.fillStyle = '#fff'; x.textAlign = 'center';
+      x.fillText(pollPhase === 0 ? 'POLL' : 'DATA', px, py + 3);
+    }
+  });
+  document.getElementById('status').textContent =
+    `Master pollt Station ${STATIONS[current2]} — ${pollPhase === 0 ? 'Poll-Anfrage →' : '← Antwort / Daten'}`;
+}
+
+function drawToken(phase) {
+  const x = clearCanvas();
+  const W = canvas().clientWidth, H = 240;
+  const col = css('--lc2');
+  const CX = W / 2, CY = H / 2 + 10;
+  const R = 90, N = 4;
+  const tick = phase / 4;
+  const tokenAng = (tick * 0.04) % (2 * Math.PI);
+
+  // ring
+  x.strokeStyle = C.bord(); x.lineWidth = 3;
+  x.beginPath(); x.arc(CX, CY, R, 0, Math.PI * 2); x.stroke();
+
+  // stations on ring
+  const angStep = (2 * Math.PI) / N;
+  STATIONS.forEach((s, i) => {
+    const ang = -Math.PI / 2 + i * angStep;
+    const sx = CX + R * Math.cos(ang), sy = CY + R * Math.sin(ang);
+    // check if this station holds token
+    const myAng = (ang + Math.PI * 2) % (Math.PI * 2);
+    const tokA = tokenAng % (Math.PI * 2);
+    const dist = Math.abs(myAng - tokA);
+    const hasToken = dist < angStep * 0.5 || dist > Math.PI * 2 - angStep * 0.5;
+
+    x.fillStyle = hasToken ? COLORS[i] : C.bg2();
+    x.beginPath(); x.arc(sx, sy, 18, 0, Math.PI * 2); x.fill();
+    x.strokeStyle = COLORS[i]; x.lineWidth = 2;
+    x.beginPath(); x.arc(sx, sy, 18, 0, Math.PI * 2); x.stroke();
+    x.font = `700 13px SF Mono,Consolas,monospace`;
+    x.fillStyle = hasToken ? '#fff' : COLORS[i]; x.textAlign = 'center';
+    x.fillText(s, sx, sy + 4);
+    if (hasToken) {
+      x.font = '11px sans-serif'; x.fillText('🎫', sx, sy - 24);
+    }
+  });
+
+  // Token dot on ring
+  const tx2 = CX + R * Math.cos(tokenAng - Math.PI / 2);
+  const ty2 = CY + R * Math.sin(tokenAng - Math.PI / 2);
+  x.fillStyle = col;
+  x.beginPath(); x.arc(tx2, ty2, 10, 0, Math.PI * 2); x.fill();
+  x.font = '700 9px SF Mono,Consolas,monospace'; x.fillStyle = '#fff'; x.textAlign = 'center';
+  x.fillText('TK', tx2, ty2 + 3);
+
+  // which station has token
+  const degrees = (tokenAng * 180 / Math.PI + 360) % 360;
+  const stIdx = Math.floor(degrees / 90) % 4;
+  document.getElementById('status').textContent =
+    `Token bei Station ${STATIONS[stIdx]} — darf jetzt senden, gibt Token dann weiter`;
+}
+
+/* ══════════════════════════════════
+   ANIMATION LOOP
+══════════════════════════════════ */
+function drawStatic() {
+  if (!current) return;
+  window[current.draw](0);
+}
+
+function startAnim() {
+  if (!current) return;
+  stopAnim();
+  t = 0;
+  function loop() {
+    t++;
+    window[current.draw](t);
+    animId = requestAnimationFrame(loop);
+  }
+  animId = requestAnimationFrame(loop);
+}
+
+function stopAnim() {
+  if (animId) { cancelAnimationFrame(animId); animId = null; }
+  t = 0;
+}
+
+/* ══════════════════════════════════
+   INIT
+══════════════════════════════════ */
+// Select TDMA by default
+const firstBtn = document.querySelector('.meth');
+sel(firstBtn, 'tdma');
+</script>
+</body>
+</html>

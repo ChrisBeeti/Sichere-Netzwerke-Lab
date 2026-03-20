@@ -1,0 +1,643 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Verbindungstopologien — FOM SS 2026</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --lc1:#854F0B;--lf1:#FAEEDA;--lt1:#633806;
+  --lc2:#3B6D11;--lf2:#EAF3DE;--lt2:#27500A;
+  --lc3:#0F6E56;--lf3:#E1F5EE;--lt3:#085041;
+  --lc4:#185FA5;--lf4:#E6F1FB;--lt4:#0C447C;
+  --lc5:#185FA5;--lf5:#E6F1FB;--lt5:#0C447C;
+  --lc6:#534AB7;--lf6:#EEEDFE;--lt6:#3C3489;
+  --lc7:#534AB7;--lf7:#EEEDFE;--lt7:#3C3489;
+  --color-background-primary:#ffffff;
+  --color-background-secondary:#f5f5f5;
+  --color-text-primary:#111;
+  --color-text-secondary:#555;
+  --color-text-tertiary:#888;
+  --color-border-primary:#bbb;
+  --color-border-secondary:#ddd;
+  --color-border-tertiary:#eee;
+  --border-radius-md:8px;
+  --border-radius-lg:12px;
+  --font-sans:system-ui,-apple-system,sans-serif;
+  --font-mono:'SF Mono',Consolas,monospace;
+}
+@media(prefers-color-scheme:dark){:root{
+  --lc1:#EF9F27;--lf1:#3d2200;--lt1:#FAEEDA;
+  --lc2:#97C459;--lf2:#1a3300;--lt2:#EAF3DE;
+  --lc3:#5DCAA5;--lf3:#003326;--lt3:#E1F5EE;
+  --lc4:#85B7EB;--lf4:#002966;--lt4:#E6F1FB;
+  --lc5:#85B7EB;--lf5:#002966;--lt5:#E6F1FB;
+  --lc6:#AFA9EC;--lf6:#1e1966;--lt6:#EEEDFE;
+  --lc7:#AFA9EC;--lf7:#1e1966;--lt7:#EEEDFE;
+  --color-background-primary:#1a1a1a;
+  --color-background-secondary:#242424;
+  --color-text-primary:#f0f0f0;
+  --color-text-secondary:#aaa;
+  --color-text-tertiary:#666;
+  --color-border-primary:#444;
+  --color-border-secondary:#333;
+  --color-border-tertiary:#2a2a2a;
+}}
+
+body{font-family:var(--font-sans);background:var(--color-background-primary);color:var(--color-text-primary);padding:1.5rem 1rem 3rem}
+
+/* ── identical to Netzkoppelelemente header ── */
+.page-header{text-align:center;margin-bottom:1.75rem}
+.page-kicker{font-size:14px;letter-spacing:.1em;text-transform:uppercase;color:var(--color-text-tertiary);margin-bottom:5px;font-family:var(--font-mono)}
+.page-title{font-size:34px;font-weight:600;color:var(--color-text-primary)}
+.page-sub{font-size:17px;color:var(--color-text-secondary);margin-top:4px}
+
+/* ── tab row — same as .vnav / .vbtn ── */
+.topo-nav{display:flex;gap:6px;flex-wrap:wrap;justify-content:center;margin-bottom:1.5rem}
+.tbtn{cursor:pointer;padding:9px 20px;border-radius:var(--border-radius-md);border:1px solid var(--color-border-secondary);background:transparent;color:var(--color-text-secondary);font-size:17px;font-family:var(--font-sans);transition:all .15s;line-height:1.4}
+.tbtn:hover{background:var(--color-background-secondary);color:var(--color-text-primary)}
+.tbtn.act{background:var(--color-background-secondary);border-color:var(--color-border-primary);color:var(--color-text-primary);font-weight:600}
+
+/* ── main layout ── */
+.main-grid{display:grid;grid-template-columns:1fr 320px;gap:18px;align-items:start}
+@media(max-width:800px){.main-grid{grid-template-columns:1fr}}
+
+/* ── diagram panel ── */
+.diagram-panel{background:var(--color-background-secondary);border:0.5px solid var(--color-border-tertiary);border-radius:var(--border-radius-lg);padding:1.25rem}
+.diag-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;flex-wrap:wrap;gap:8px}
+.diag-title{font-size:24px;font-weight:600;color:var(--color-text-primary)}
+.netz-badge{display:inline-flex;align-items:center;padding:4px 12px;border-radius:20px;font-family:var(--font-mono);font-size:13px;font-weight:600}
+.send-hint{font-size:14px;color:var(--color-text-tertiary);font-family:var(--font-mono);text-align:center;margin-bottom:8px}
+.svg-wrap{background:var(--color-background-primary);border:0.5px solid var(--color-border-tertiary);border-radius:var(--border-radius-md);overflow:hidden}
+#topo-svg{display:block;width:100%;height:340px}
+
+/* node styles injected via JS, base classes here */
+.tnode{cursor:pointer;transition:all .2s}
+.tnode:hover .node-circle{filter:brightness(1.2)}
+.tnode.selected .node-circle{stroke-width:3}
+.tnode.selected .node-ring{opacity:1}
+.node-ring{opacity:0;transition:opacity .2s}
+
+/* ── packet animation ── */
+#pkt-dot{pointer-events:none}
+@keyframes pkt-pulse{0%,100%{r:7}50%{r:10}}
+
+/* ── info panel ── */
+.info-panel{background:var(--color-background-primary);border:0.5px solid var(--color-border-secondary);border-radius:var(--border-radius-lg);padding:1.5rem;position:sticky;top:1rem}
+.info-icon{font-size:36px;margin-bottom:10px}
+.info-name{font-size:22px;font-weight:700;margin-bottom:2px}
+.info-sub{font-family:var(--font-mono);font-size:13px;color:var(--color-text-tertiary);margin-bottom:16px}
+.krow{display:flex;gap:10px;margin-bottom:10px;align-items:flex-start}
+.kk{font-family:var(--font-mono);font-size:11px;color:var(--color-text-tertiary);text-transform:uppercase;letter-spacing:.06em;min-width:76px;flex-shrink:0;padding-top:3px}
+.kv{font-size:15px;color:var(--color-text-primary);line-height:1.5}
+.pro-con{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:12px}
+.pro-box,.con-box{border-radius:var(--border-radius-md);padding:10px 12px;font-size:14px;line-height:1.5}
+.pro-box{background:var(--lf2);border:0.5px solid var(--lc2);color:var(--lt2)}
+.pro-box strong,.con-box strong{display:block;font-size:12px;text-transform:uppercase;letter-spacing:.06em;margin-bottom:5px;font-family:var(--font-mono)}
+.pro-box strong{color:var(--lc2)}
+.con-box{background:var(--lf1);border:0.5px solid var(--lc1);color:var(--lt1)}
+.con-box strong{color:var(--lc1)}
+@media(prefers-color-scheme:dark){
+  .pro-box{color:var(--lt2)}.con-box{color:var(--lt1)}
+}
+
+/* ── demo button ── */
+.demo-btn{cursor:pointer;display:inline-flex;align-items:center;gap:7px;padding:8px 18px;border-radius:var(--border-radius-md);border:1px solid var(--color-border-secondary);background:var(--color-background-secondary);color:var(--color-text-secondary);font-size:15px;font-family:var(--font-sans);transition:all .15s;margin-top:12px;width:100%;justify-content:center}
+.demo-btn:hover{background:var(--color-background-primary);color:var(--color-text-primary);border-color:var(--color-border-primary)}
+.demo-btn.running{border-color:var(--lc3);color:var(--lc3)}
+
+.footer{text-align:center;margin-top:14px;font-size:14px;color:var(--color-text-tertiary);font-family:var(--font-mono)}
+</style>
+</head>
+<body>
+
+<div class="page-header">
+  <div class="page-kicker">Sichere Netzwerke · SS 2026 · FOM Hochschule</div>
+  <div class="page-title">Verbindungstopologien</div>
+  <div class="page-sub">Sicherungsschicht · LAN / MAN / WAN — Interaktive Darstellung</div>
+</div>
+
+<div class="topo-nav" id="topo-nav"></div>
+
+<div class="main-grid">
+  <div class="diagram-panel">
+    <div class="diag-header">
+      <div class="diag-title" id="diag-title">—</div>
+      <div class="netz-badge" id="netz-badge"></div>
+    </div>
+    <div class="send-hint" id="send-hint">Knoten anklicken → Datenpaket senden</div>
+    <div class="svg-wrap">
+      <svg id="topo-svg" viewBox="0 0 500 340" xmlns="http://www.w3.org/2000/svg">
+        <defs>
+          <marker id="arr" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto">
+            <path d="M0,0 L0,6 L8,3 z" fill="#888"/>
+          </marker>
+          <filter id="glow">
+            <feGaussianBlur stdDeviation="3" result="coloredBlur"/>
+            <feMerge><feMergeNode in="coloredBlur"/><feMergeNode in="SourceGraphic"/></feMerge>
+          </filter>
+        </defs>
+        <g id="edges-layer"></g>
+        <g id="nodes-layer"></g>
+        <circle id="pkt-dot" r="0" fill="#0F6E56" filter="url(#glow)" opacity="0"/>
+      </svg>
+    </div>
+  </div>
+
+  <div class="info-panel" id="info-panel">
+    <div id="info-idle" style="text-align:center;color:var(--color-text-tertiary);padding:2rem 0">
+      <div style="font-size:40px;margin-bottom:10px">🖧</div>
+      <div style="font-size:17px">Topologie wählen</div>
+    </div>
+    <div id="info-body" style="display:none">
+      <div class="info-icon" id="i-icon"></div>
+      <div class="info-name" id="i-name"></div>
+      <div class="info-sub" id="i-sub"></div>
+      <div class="krow"><div class="kk">Netzart</div><div class="kv" id="i-netz"></div></div>
+      <div class="krow"><div class="kk">Medium</div><div class="kv" id="i-med"></div></div>
+      <div class="krow"><div class="kk">Verbindungen</div><div class="kv" id="i-conn"></div></div>
+      <div class="krow"><div class="kk">Ausfall</div><div class="kv" id="i-fail"></div></div>
+      <div class="pro-con">
+        <div class="pro-box"><strong>✓ Vorteile</strong><div id="i-pro"></div></div>
+        <div class="con-box"><strong>✗ Nachteile</strong><div id="i-con"></div></div>
+      </div>
+      <button class="demo-btn" id="demo-btn" onclick="runDemo()">▶ Demo-Paket senden</button>
+    </div>
+  </div>
+</div>
+
+<div class="footer">Verbindungstopologien · SS 2026 · Christian Böttger M.Sc.</div>
+
+<script>
+/* ══════════════════════════════════
+   TOPOLOGY DATA
+══════════════════════════════════ */
+const TOPOS = [
+  {
+    id:'stern', name:'Stern', icon:'⭐', netz:'LAN', color:'--lc3', bg:'--lf3', dark:'--lt3',
+    badge:'LAN',
+    medium:'Dedizierte Punkt-zu-Punkt-Kabel',
+    conn:'N Verbindungen (1 je Gerät zum Switch)',
+    fail:'Ein Knotenausfall: kein Netzausfall. Zentralknoten-Ausfall: kompletter Ausfall.',
+    pro:'Einfache Fehlerdiagnose · Ausfall eines Geräts isoliert · Leicht erweiterbar',
+    con:'Abhängigkeit vom Zentrum · Mehr Kabelaufwand als Bus',
+    hint:'Knoten anklicken → Paket über Zentrum senden',
+    buildFn:'buildStern',
+  },
+  {
+    id:'bus', name:'Bus', icon:'🚌', netz:'LAN', color:'--lc2', bg:'--lf2', dark:'--lt2',
+    badge:'LAN',
+    medium:'Gemeinsames Koaxialkabel (Shared Medium)',
+    conn:'N Verbindungen direkt am Bus-Kabel',
+    fail:'Bus-Ausfall (Kabelbruch) legt gesamtes Netz lahm.',
+    pro:'Wenig Kabel · Einfache Verkabelung · Günstig',
+    con:'Kollisionsdomäne für alle · Bus-Ausfall = Netzausfall · Schwer zu debuggen',
+    hint:'Knoten anklicken → Broadcast über Bus',
+    buildFn:'buildBus',
+  },
+  {
+    id:'ring', name:'Ring', icon:'💍', netz:'LAN', color:'--lc4', bg:'--lf4', dark:'--lt4',
+    badge:'LAN',
+    medium:'Koaxial- oder Glasfaserkabel im Kreisschluss',
+    conn:'N Verbindungen (je 2 pro Knoten)',
+    fail:'Ein Knotenausfall oder Kabelbruch unterbricht das gesamte Netz (ohne Doppelring).',
+    pro:'Gleiche Zugriffsrechte · Token-Ring verhindert Kollisionen · Deterministisch',
+    con:'Ausfall eines Knotens bricht Ring · Langsam bei großen Ringen',
+    hint:'Knoten anklicken → Paket im Uhrzeigersinn',
+    buildFn:'buildRing',
+  },
+  {
+    id:'baum', name:'Baum', icon:'🌲', netz:'MAN', color:'--lc1', bg:'--lf1', dark:'--lt1',
+    badge:'MAN',
+    medium:'Strukturierte Verkabelung (Kupfer / Glasfaser)',
+    conn:'N−1 Verbindungen (hierarchisch)',
+    fail:'Ausfall eines Verteilerknotens trennt seinen gesamten Teilbaum.',
+    pro:'Hierarchisch skalierbar · Segmentierung durch Layer · Gut für Gebäudenetzwerke',
+    con:'Abhängigkeit von übergeordneten Knoten · Komplexer Aufbau',
+    hint:'Knoten anklicken → hierarchischer Pfad',
+    buildFn:'buildBaum',
+  },
+  {
+    id:'voll', name:'Vollvermaschung', icon:'🕸️', netz:'WAN / GAN', color:'--lc6', bg:'--lf6', dark:'--lt6',
+    badge:'WAN',
+    medium:'Dedizierte Leitungen zwischen allen Knoten',
+    conn:'N×(N−1)/2 Verbindungen',
+    fail:'Sehr ausfallsicher — mehrere Alternativwege immer verfügbar.',
+    pro:'Maximale Redundanz · Kein Single Point of Failure · Parallele Übertragung',
+    con:'Exponentiell wachsende Kabelzahl · Hohe Kosten · Nur für kleine Knotenanzahl praktikabel',
+    hint:'Knoten anklicken → direkter Pfad',
+    buildFn:'buildVoll',
+  },
+  {
+    id:'teil', name:'Teilvermaschung', icon:'🔗', netz:'WAN / GAN', color:'--lc6', bg:'--lf6', dark:'--lt6',
+    badge:'WAN',
+    medium:'Teils dedizierte, teils gemeinschaftliche Leitungen',
+    conn:'Selektive Redundanz — kritische Knoten mehrfach verbunden',
+    fail:'Ausfallsicherheit abhängig von Redundanzgrad der kritischen Pfade.',
+    pro:'Kompromiss aus Redundanz & Kosten · Praxisnah (Internet-Backbone) · Flexibel planbar',
+    con:'Komplexes Routing nötig · Teilweise Single Points of Failure',
+    hint:'Knoten anklicken → gerouteter Pfad',
+    buildFn:'buildTeil',
+  },
+];
+
+/* ══════════════════════════════════
+   SVG HELPERS
+══════════════════════════════════ */
+const SVG_NS = 'http://www.w3.org/2000/svg';
+const W = 500, H = 340;
+
+function cssVar(name) {
+  return getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+}
+
+function el(tag, attrs={}, parent=null) {
+  const e = document.createElementNS(SVG_NS, tag);
+  Object.entries(attrs).forEach(([k,v]) => e.setAttribute(k, v));
+  if (parent) parent.appendChild(e);
+  return e;
+}
+
+function drawEdge(x1,y1,x2,y2, col, dashed=false) {
+  const layer = document.getElementById('edges-layer');
+  const line = el('line', {
+    x1, y1, x2, y2,
+    stroke: col,
+    'stroke-width': '2.5',
+    'stroke-linecap': 'round',
+    opacity: '0.5',
+    ...(dashed ? {'stroke-dasharray':'6 4'} : {})
+  }, layer);
+  return line;
+}
+
+function drawNode(x, y, label, col, bgCol, idx) {
+  const layer = document.getElementById('nodes-layer');
+  const g = el('g', {class:'tnode', 'data-idx':idx, transform:`translate(${x},${y})`}, layer);
+  // glow ring (selected indicator)
+  el('circle', {r:'22', fill:'none', stroke:col, 'stroke-width':'2.5', opacity:'0', class:'node-ring'}, g);
+  // main circle
+  el('circle', {r:'16', fill:bgCol, stroke:col, 'stroke-width':'2', class:'node-circle'}, g);
+  // label
+  const t = el('text', {
+    'text-anchor':'middle', 'dominant-baseline':'middle',
+    'font-family':'var(--font-mono)', 'font-size':'11',
+    'font-weight':'700', fill:col, 'pointer-events':'none'
+  }, g);
+  t.textContent = label;
+  g.onclick = () => onNodeClick(idx);
+  return g;
+}
+
+/* ══════════════════════════════════
+   TOPOLOGY BUILDERS
+══════════════════════════════════ */
+let currentNodes = []; // [{x,y,label}]
+let currentTopo = null;
+let selectedSrc = null;
+let animating = false;
+
+function clearSVG() {
+  document.getElementById('edges-layer').innerHTML = '';
+  document.getElementById('nodes-layer').innerHTML = '';
+  currentNodes = [];
+  selectedSrc = null;
+  resetPacket();
+}
+
+function getColors(topo) {
+  const col  = cssVar(topo.color);
+  const bg   = cssVar(topo.bg);
+  const dark = cssVar(topo.dark);
+  return {col, bg, dark};
+}
+
+function buildStern(topo) {
+  const {col,bg,dark} = getColors(topo);
+  const cx=250, cy=168, r=118;
+  const N=5;
+  const nodePos=[{x:cx,y:cy,label:'SW'}];
+  for(let i=0;i<N;i++){
+    const a=(i*2*Math.PI/N)-Math.PI/2;
+    nodePos.push({x:Math.round(cx+r*Math.cos(a)), y:Math.round(cy+r*Math.sin(a)), label:`PC${i+1}`});
+  }
+  currentNodes=nodePos;
+  // edges: center (0) to all others
+  for(let i=1;i<=N;i++) drawEdge(nodePos[0].x,nodePos[0].y,nodePos[i].x,nodePos[i].y,col);
+  // nodes
+  nodePos.forEach((n,i)=>{
+    const g=drawNode(n.x,n.y,n.label,col,bg,i);
+    if(i===0){
+      // center is Switch – bigger
+      g.querySelector('.node-circle').setAttribute('r','22');
+      g.querySelector('.node-ring').setAttribute('r','30');
+      g.querySelector('text').setAttribute('font-size','10');
+    }
+  });
+}
+
+function buildBus(topo) {
+  const {col,bg} = getColors(topo);
+  const N=6;
+  const busY=170, busX0=60, busX1=440;
+  // bus line
+  const layer=document.getElementById('edges-layer');
+  el('line',{x1:busX0,y1:busY,x2:busX1,y2:busY,stroke:col,'stroke-width':'4','stroke-linecap':'round',opacity:'0.6'},layer);
+  // terminators
+  el('circle',{cx:busX0,cy:busY,r:'6',fill:col,opacity:'0.8'},layer);
+  el('circle',{cx:busX1,cy:busY,r:'6',fill:col,opacity:'0.8'},layer);
+  const xs=[90,162,234,306,378,440-18];
+  const ys=[busY-90,busY+90,busY-90,busY+90,busY-90,busY+90];
+  const nodePos=xs.map((x,i)=>({x,y:ys[i],label:`PC${i+1}`}));
+  currentNodes=nodePos;
+  // drop-lines
+  nodePos.forEach(n=>drawEdge(n.x,busY,n.x,n.y,col));
+  // nodes
+  nodePos.forEach((n,i)=>drawNode(n.x,n.y,n.label,col,bg,i));
+}
+
+function buildRing(topo) {
+  const {col,bg} = getColors(topo);
+  const cx=250,cy=168,r=120,N=6;
+  const nodePos=[];
+  for(let i=0;i<N;i++){
+    const a=(i*2*Math.PI/N)-Math.PI/2;
+    nodePos.push({x:Math.round(cx+r*Math.cos(a)),y:Math.round(cy+r*Math.sin(a)),label:`PC${i+1}`});
+  }
+  currentNodes=nodePos;
+  for(let i=0;i<N;i++) drawEdge(nodePos[i].x,nodePos[i].y,nodePos[(i+1)%N].x,nodePos[(i+1)%N].y,col);
+  nodePos.forEach((n,i)=>drawNode(n.x,n.y,n.label,col,bg,i));
+}
+
+function buildBaum(topo) {
+  const {col,bg} = getColors(topo);
+  const nodes=[
+    {x:250,y:46,label:'Root'},
+    {x:140,y:140,label:'Sw1'},{x:360,y:140,label:'Sw2'},
+    {x:72,y:240,label:'A1'},{x:165,y:240,label:'A2'},
+    {x:310,y:240,label:'B1'},{x:400,y:240,label:'B2'},
+  ];
+  currentNodes=nodes;
+  const edges=[[0,1],[0,2],[1,3],[1,4],[2,5],[2,6]];
+  edges.forEach(([a,b])=>drawEdge(nodes[a].x,nodes[a].y,nodes[b].x,nodes[b].y,col));
+  nodes.forEach((n,i)=>{
+    const g=drawNode(n.x,n.y,n.label,col,bg,i);
+    if(i<=2){
+      g.querySelector('.node-circle').setAttribute('r','20');
+      g.querySelector('.node-ring').setAttribute('r','28');
+    }
+  });
+}
+
+function buildVoll(topo) {
+  const {col,bg} = getColors(topo);
+  const N=5,cx=250,cy=168,r=120;
+  const nodePos=[];
+  for(let i=0;i<N;i++){
+    const a=(i*2*Math.PI/N)-Math.PI/2;
+    nodePos.push({x:Math.round(cx+r*Math.cos(a)),y:Math.round(cy+r*Math.sin(a)),label:`N${i+1}`});
+  }
+  currentNodes=nodePos;
+  for(let i=0;i<N;i++) for(let j=i+1;j<N;j++) drawEdge(nodePos[i].x,nodePos[i].y,nodePos[j].x,nodePos[j].y,col);
+  nodePos.forEach((n,i)=>drawNode(n.x,n.y,n.label,col,bg,i));
+}
+
+function buildTeil(topo) {
+  const {col,bg} = getColors(topo);
+  const nodes=[
+    {x:250,y:50,label:'A'},{x:420,y:130,label:'B'},{x:400,y:290,label:'C'},
+    {x:100,y:290,label:'D'},{x:80,y:130,label:'E'},{x:250,y:200,label:'F'},
+  ];
+  currentNodes=nodes;
+  // not all edges – selective redundancy
+  const edges=[[0,1],[1,2],[2,3],[3,4],[4,0],[0,5],[5,2],[5,3],[1,5]];
+  edges.forEach(([a,b],i)=>drawEdge(nodes[a].x,nodes[a].y,nodes[b].x,nodes[b].y,col,i>=6));
+  nodes.forEach((n,i)=>drawNode(n.x,n.y,n.label,col,bg,i));
+}
+
+/* ══════════════════════════════════
+   PACKET ANIMATION
+══════════════════════════════════ */
+function resetPacket(){
+  const p=document.getElementById('pkt-dot');
+  p.setAttribute('r','0'); p.setAttribute('opacity','0');
+  animating=false;
+  const btn=document.getElementById('demo-btn');
+  if(btn) btn.classList.remove('running');
+}
+
+function animatePacket(path, col, onDone){
+  if(animating) return;
+  animating=true;
+  const p=document.getElementById('pkt-dot');
+  p.setAttribute('fill', col);
+  p.setAttribute('opacity','1');
+  p.setAttribute('r','8');
+
+  let step=0;
+  const STEPS=path.length-1;
+  const DURATION=600; // ms per hop
+
+  function hop(){
+    if(step>=STEPS){ resetPacket(); if(onDone) onDone(); return; }
+    const from=path[step], to=path[step+1];
+    const startT=performance.now();
+    function frame(now){
+      const t=Math.min((now-startT)/DURATION,1);
+      const ease=t<.5?2*t*t:1-Math.pow(-2*t+2,2)/2; // easeInOut
+      const x=from.x+(to.x-from.x)*ease;
+      const y=from.y+(to.y-from.y)*ease;
+      p.setAttribute('cx',x); p.setAttribute('cy',y);
+      if(t<1){ requestAnimationFrame(frame); }
+      else{ step++; hop(); }
+    }
+    requestAnimationFrame(frame);
+  }
+  hop();
+}
+
+/* ══════════════════════════════════
+   NODE CLICK INTERACTION
+══════════════════════════════════ */
+function onNodeClick(idx){
+  if(animating||!currentTopo) return;
+  if(selectedSrc===null){
+    selectedSrc=idx;
+    highlightSelected(idx);
+    document.getElementById('send-hint').textContent='Jetzt Zielknoten wählen…';
+  } else {
+    if(selectedSrc===idx){ selectedSrc=null; clearHighlight(); document.getElementById('send-hint').textContent=currentTopo.hint; return; }
+    const src=selectedSrc, dst=idx;
+    selectedSrc=null; clearHighlight();
+    sendPacket(src,dst);
+    document.getElementById('send-hint').textContent=currentTopo.hint;
+  }
+}
+
+function highlightSelected(idx){
+  clearHighlight();
+  const g=document.querySelector(`[data-idx="${idx}"]`);
+  if(g) g.querySelector('.node-ring').setAttribute('opacity','1');
+}
+function clearHighlight(){
+  document.querySelectorAll('.node-ring').forEach(r=>r.setAttribute('opacity','0'));
+}
+
+function sendPacket(src,dst){
+  const col=cssVar(currentTopo.color);
+  const path=buildPath(currentTopo.id, src, dst);
+  if(!path||path.length<2) return;
+  const pts=path.map(i=>typeof i==='number'?currentNodes[i]:i);
+  animatePacket(pts, col, null);
+}
+
+function buildPath(topoId, src, dst){
+  // topology-aware routing
+  switch(topoId){
+    case 'stern':{
+      if(src===0) return[src,dst];
+      if(dst===0) return[src,dst];
+      return[src,0,dst]; // always via center
+    }
+    case 'bus':{
+      // along bus: src drop → bus → dst drop
+      const N=currentNodes.length;
+      // simulate path via bus points between src and dst x-coords
+      const sx=currentNodes[src].x, dx=currentNodes[dst].x;
+      const busY=170;
+      const bp1={x:sx,y:busY}, bp2={x:dx,y:busY};
+      return[src, 'bp1', 'bp2', dst].map(i=>{
+        if(i==='bp1') return bp1;
+        if(i==='bp2') return bp2;
+        return currentNodes[i];
+      });
+    }
+    case 'ring':{
+      // clockwise: find shortest ring path
+      const N=currentNodes.length;
+      const cw=[], ccw=[];
+      let i=src;
+      while(i!==dst){ cw.push(i); i=(i+1)%N; }
+      cw.push(dst);
+      i=src;
+      while(i!==dst){ ccw.push(i); i=(i-1+N)%N; }
+      ccw.push(dst);
+      return cw; // always clockwise for visualization clarity
+    }
+    case 'baum':{
+      // find path in tree via LCA
+      function parent(n){ return n<=0?-1:n<=2?0:n<=4?1:2; }
+      function ancestors(n){ const a=[]; while(n>=0){a.push(n);n=parent(n);} return a; }
+      const as=ancestors(src), ad=ancestors(dst);
+      let lca=0;
+      for(const a of as){ if(ad.includes(a)){lca=a;break;} }
+      const up=[];let n=src;while(n!==lca){up.push(n);n=parent(n);}up.push(lca);
+      const down=[];n=dst;while(n!==lca){down.push(n);n=parent(n);}
+      return [...up,...down.reverse()];
+    }
+    case 'voll': return[src,dst]; // direct
+    case 'teil':{
+      // simple BFS on partial mesh
+      const adj={0:[1,4,5],1:[0,2,5],2:[1,3,5],3:[2,4,5],4:[3,0],5:[0,2,3,1]};
+      const visited=new Set([src]), queue=[[src]], prev={};
+      while(queue.length){
+        const path=queue.shift(), cur=path[path.length-1];
+        if(cur===dst) return path;
+        for(const nb of (adj[cur]||[])){
+          if(!visited.has(nb)){visited.add(nb);queue.push([...path,nb]);}
+        }
+      }
+      return[src,dst];
+    }
+  }
+  return[src,dst];
+}
+
+/* ══════════════════════════════════
+   DEMO AUTO-ANIMATION
+══════════════════════════════════ */
+function runDemo(){
+  if(animating||!currentTopo) return;
+  const btn=document.getElementById('demo-btn');
+  btn.classList.add('running');
+  const id=currentTopo.id;
+  let pairs;
+  switch(id){
+    case 'stern': pairs=[[1,3],[3,5],[5,2]]; break;
+    case 'bus':   pairs=[[0,5],[5,2],[2,4]]; break;
+    case 'ring':  pairs=[[0,3],[3,5],[5,1]]; break;
+    case 'baum':  pairs=[[3,6],[6,4],[4,5]]; break;
+    case 'voll':  pairs=[[0,3],[3,1],[1,4],[4,2]]; break;
+    case 'teil':  pairs=[[0,2],[2,4],[4,1],[1,3]]; break;
+    default: pairs=[[0,1]];
+  }
+  let i=0;
+  function next(){
+    if(i>=pairs.length){ btn.classList.remove('running'); return; }
+    const [s,d]=pairs[i++];
+    highlightSelected(s);
+    setTimeout(()=>{ clearHighlight(); sendPacket(s,d); setTimeout(next,900); },300);
+  }
+  next();
+}
+
+/* ══════════════════════════════════
+   TOPOLOGY SELECT
+══════════════════════════════════ */
+function selectTopo(id, btn){
+  document.querySelectorAll('.tbtn').forEach(b=>b.classList.remove('act'));
+  btn.classList.add('act');
+  clearSVG();
+  const topo=TOPOS.find(t=>t.id===id);
+  currentTopo=topo;
+
+  // build diagram
+  window[topo.buildFn](topo);
+
+  // update diagram header
+  document.getElementById('diag-title').textContent=topo.name;
+  document.getElementById('send-hint').textContent=topo.hint;
+  const col=cssVar(topo.color), bg=cssVar(topo.bg);
+  const badge=document.getElementById('netz-badge');
+  badge.textContent=topo.badge;
+  badge.style.background=bg;
+  badge.style.color=col;
+  badge.style.border=`0.5px solid ${col}`;
+
+  // update info panel
+  document.getElementById('info-idle').style.display='none';
+  document.getElementById('info-body').style.display='block';
+  document.getElementById('i-icon').textContent=topo.icon;
+  document.getElementById('i-name').textContent=topo.name;
+  document.getElementById('i-name').style.color=col;
+  document.getElementById('i-sub').textContent=topo.netz+'-Topologie';
+  document.getElementById('i-netz').textContent=topo.netz;
+  document.getElementById('i-med').textContent=topo.medium;
+  document.getElementById('i-conn').textContent=topo.conn;
+  document.getElementById('i-fail').textContent=topo.fail;
+  document.getElementById('i-pro').textContent=topo.pro;
+  document.getElementById('i-con').textContent=topo.con;
+}
+
+/* ══════════════════════════════════
+   INIT
+══════════════════════════════════ */
+function init(){
+  const nav=document.getElementById('topo-nav');
+  TOPOS.forEach(t=>{
+    const b=document.createElement('button');
+    b.className='tbtn';
+    b.textContent=t.name;
+    b.onclick=()=>selectTopo(t.id,b);
+    nav.appendChild(b);
+  });
+  // auto-select first
+  const first=nav.querySelector('.tbtn');
+  selectTopo(TOPOS[0].id, first);
+}
+
+init();
+</script>
+</body>
+</html>

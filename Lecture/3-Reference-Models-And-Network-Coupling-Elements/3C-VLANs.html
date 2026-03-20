@@ -1,0 +1,691 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>VLANs — FOM SS 2026</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --lc1:#854F0B;--lf1:#FAEEDA;--lt1:#633806;
+  --lc2:#3B6D11;--lf2:#EAF3DE;--lt2:#27500A;
+  --lc3:#0F6E56;--lf3:#E1F5EE;--lt3:#085041;
+  --lc4:#185FA5;--lf4:#E6F1FB;--lt4:#0C447C;
+  --lc6:#534AB7;--lf6:#EEEDFE;--lt6:#3C3489;
+  --color-background-primary:#ffffff;
+  --color-background-secondary:#f5f5f5;
+  --color-text-primary:#111;
+  --color-text-secondary:#555;
+  --color-text-tertiary:#888;
+  --color-border-primary:#bbb;
+  --color-border-secondary:#ddd;
+  --color-border-tertiary:#eee;
+  --border-radius-md:8px;
+  --border-radius-lg:12px;
+  --font-sans:system-ui,-apple-system,sans-serif;
+  --font-mono:'SF Mono',Consolas,monospace;
+  /* VLAN colors */
+  --va:#185FA5;--va-bg:#E6F1FB;
+  --vb:#3B6D11;--vb-bg:#EAF3DE;
+  --vc:#854F0B;--vc-bg:#FAEEDA;
+}
+@media(prefers-color-scheme:dark){:root{
+  --lc1:#EF9F27;--lf1:#3d2200;
+  --lc2:#97C459;--lf2:#1a3300;
+  --lc3:#5DCAA5;--lf3:#003326;
+  --lc4:#85B7EB;--lf4:#002966;
+  --lc6:#AFA9EC;--lf6:#1e1966;
+  --color-background-primary:#1a1a1a;
+  --color-background-secondary:#242424;
+  --color-text-primary:#f0f0f0;
+  --color-text-secondary:#aaa;
+  --color-text-tertiary:#666;
+  --color-border-primary:#444;
+  --color-border-secondary:#333;
+  --color-border-tertiary:#2a2a2a;
+  --va:#85B7EB;--va-bg:#002966;
+  --vb:#97C459;--vb-bg:#1a3300;
+  --vc:#EF9F27;--vc-bg:#3d2200;
+}}
+body{font-family:var(--font-sans);background:var(--color-background-primary);color:var(--color-text-primary);padding:0;margin:0}
+
+/* ── SLIDE NAVIGATION ── */
+.slide-nav{display:flex;align-items:center;justify-content:center;gap:12px;padding:14px 20px;background:var(--color-background-secondary);border-bottom:0.5px solid var(--color-border-tertiary)}
+.slide-btn{cursor:pointer;padding:8px 22px;border-radius:var(--border-radius-md);border:1px solid var(--color-border-secondary);background:transparent;color:var(--color-text-secondary);font-size:16px;font-family:var(--font-sans);transition:all .15s}
+.slide-btn:hover{background:var(--color-background-primary);color:var(--color-text-primary)}
+.slide-btn.act{background:var(--color-background-primary);border-color:var(--color-border-primary);color:var(--color-text-primary);font-weight:600}
+.slide-counter{font-family:var(--font-mono);font-size:14px;color:var(--color-text-tertiary)}
+
+/* ── SLIDES ── */
+.slide{display:none;padding:1.5rem 1.5rem 2.5rem;max-width:1200px;margin:0 auto}
+.slide.show{display:block}
+
+/* ── SHARED COMPONENTS ── */
+.kicker{font-size:13px;letter-spacing:.1em;text-transform:uppercase;color:var(--color-text-tertiary);font-family:var(--font-mono);margin-bottom:6px}
+.slide-title{font-size:32px;font-weight:700;color:var(--color-text-primary);margin-bottom:4px}
+.slide-sub{font-size:17px;color:var(--color-text-secondary);margin-bottom:1.5rem;padding-bottom:1rem;border-bottom:0.5px solid var(--color-border-tertiary)}
+
+.panel{background:var(--color-background-secondary);border:0.5px solid var(--color-border-tertiary);border-radius:var(--border-radius-lg);padding:1.25rem}
+.panel-white{background:var(--color-background-primary);border:0.5px solid var(--color-border-secondary);border-radius:var(--border-radius-lg);padding:1.25rem}
+.sec-label{font-size:12px;letter-spacing:.1em;text-transform:uppercase;color:var(--color-text-tertiary);font-family:var(--font-mono);margin-bottom:10px}
+
+.krow{display:flex;gap:10px;margin-bottom:10px;align-items:flex-start}
+.kk{font-family:var(--font-mono);font-size:11px;color:var(--color-text-tertiary);text-transform:uppercase;letter-spacing:.06em;min-width:80px;flex-shrink:0;padding-top:3px}
+.kv{font-size:15px;color:var(--color-text-primary);line-height:1.5}
+
+.cbtn{cursor:pointer;padding:9px 22px;border-radius:var(--border-radius-md);border:1px solid var(--color-border-secondary);background:var(--color-background-primary);color:var(--color-text-secondary);font-size:16px;font-family:var(--font-sans);transition:all .15s;font-weight:500}
+.cbtn:hover{background:var(--color-background-secondary);color:var(--color-text-primary)}
+.cbtn.go{background:var(--lc3);color:#fff;border-color:var(--lc3);font-weight:700}
+
+.status{font-family:var(--font-mono);font-size:13px;color:var(--color-text-tertiary)}
+
+/* ─── SLIDE 1 specific ─── */
+.s1-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:1.25rem}
+@media(max-width:760px){.s1-grid{grid-template-columns:1fr}}
+.s1-bottom{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px}
+@media(max-width:760px){.s1-bottom{grid-template-columns:1fr}}
+
+.toggle-group{display:flex;gap:6px;margin-bottom:10px}
+.tgl{cursor:pointer;padding:6px 16px;border-radius:var(--border-radius-md);border:1px solid var(--color-border-secondary);background:transparent;color:var(--color-text-secondary);font-size:15px;font-family:var(--font-sans);transition:all .15s}
+.tgl:hover{background:var(--color-background-secondary)}
+.tgl.on{background:var(--color-background-secondary);border-color:var(--color-border-primary);color:var(--color-text-primary);font-weight:600}
+
+/* canvas wrap */
+.cw{background:var(--color-background-primary);border:0.5px solid var(--color-border-tertiary);border-radius:var(--border-radius-md);overflow:hidden}
+canvas{display:block;width:100%}
+
+.def-card{border-radius:var(--border-radius-lg);padding:1rem;border:0.5px solid}
+.def-head{font-size:14px;font-weight:700;font-family:var(--font-mono);text-transform:uppercase;letter-spacing:.06em;margin-bottom:6px}
+.def-body{font-size:15px;line-height:1.55}
+
+/* ─── SLIDE 2 specific ─── */
+.s2-grid{display:grid;grid-template-columns:1fr 340px;gap:14px;align-items:start}
+@media(max-width:800px){.s2-grid{grid-template-columns:1fr}}
+.port-row{display:flex;align-items:center;gap:10px;padding:10px 14px;border-radius:var(--border-radius-md);border:0.5px solid var(--color-border-tertiary);background:var(--color-background-primary);margin-bottom:6px;cursor:pointer;transition:all .15s}
+.port-row:hover{border-color:var(--color-border-primary);background:var(--color-background-secondary)}
+.port-row.sel{border-color:currentColor}
+.port-dot{width:14px;height:14px;border-radius:50%;flex-shrink:0}
+.port-name{font-size:16px;font-weight:600;flex:1}
+.port-tag{font-family:var(--font-mono);font-size:12px;padding:2px 8px;border-radius:3px;font-weight:600}
+.frame-vis{margin-top:12px;background:var(--color-background-primary);border:0.5px solid var(--color-border-tertiary);border-radius:var(--border-radius-md);padding:10px 12px}
+.frame-row{display:flex;align-items:stretch;height:28px;border-radius:4px;overflow:hidden;margin-bottom:6px}
+.frame-field{display:flex;align-items:center;justify-content:center;font-family:var(--font-mono);font-size:10px;font-weight:700;white-space:nowrap;padding:0 6px;color:#fff}
+.frame-label{display:flex;align-items:center;justify-content:center;font-family:var(--font-mono);font-size:10px;color:var(--color-text-tertiary);white-space:nowrap;padding:0 4px;border-top:1px solid var(--color-border-tertiary)}
+
+.footer{text-align:center;margin-top:16px;padding-bottom:1rem;font-size:14px;color:var(--color-text-tertiary);font-family:var(--font-mono)}
+</style>
+</head>
+<body>
+
+<!-- NAV -->
+<div class="slide-nav">
+  <button class="slide-btn act" onclick="showSlide(1,this)">Folie 1 — Was ist ein VLAN?</button>
+  <span class="slide-counter" id="sctr">1 / 2</span>
+  <button class="slide-btn" onclick="showSlide(2,this)">Folie 2 — IEEE 802.1Q &amp; Trunk</button>
+</div>
+
+<!-- ══════════════════════════════════════════════
+     SLIDE 1 — Was ist ein VLAN?
+══════════════════════════════════════════════ -->
+<div class="slide show" id="slide1">
+  <div class="kicker">Sicherungsschicht · OSI Layer 2 · IEEE 802.1Q</div>
+  <div class="slide-title">VLANs — Virtual Local Area Networks</div>
+  <div class="slide-sub">Virtuelle Unterteilung eines physischen Netzwerks</div>
+
+  <!-- Toggle + canvas -->
+  <div class="panel" style="margin-bottom:14px">
+    <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;margin-bottom:12px">
+      <div class="sec-label" style="margin:0">Broadcast-Domänen — Vergleich</div>
+      <div class="toggle-group">
+        <button class="tgl on" id="tgl-ohne" onclick="setMode('ohne',this)">Ohne VLAN</button>
+        <button class="tgl"    id="tgl-mit"  onclick="setMode('mit',this)">Mit VLAN</button>
+      </div>
+      <div style="display:flex;gap:8px">
+        <button class="cbtn go" onclick="startBcast()">▶ Broadcast senden</button>
+        <button class="cbtn"    onclick="stopBcast()">⏹ Stop</button>
+      </div>
+    </div>
+    <div style="text-align:center;margin-bottom:6px">
+      <span class="status" id="s1-status">Klick auf ▶ zum Starten</span>
+    </div>
+    <div class="cw"><canvas id="c1" height="280"></canvas></div>
+  </div>
+
+  <!-- Definition cards -->
+  <div class="s1-grid">
+    <div class="def-card" style="background:var(--lf4);border-color:var(--lc4)">
+      <div class="def-head" style="color:var(--lc4)">⚙️ Funktion</div>
+      <div class="def-body">Geräte werden auf <strong>Layer 2</strong> in separate, voneinander isolierte <strong>Broadcast-Domänen</strong> aufgeteilt — unabhängig von ihrer physischen Verkabelung.</div>
+    </div>
+    <div class="def-card" style="background:var(--lf2);border-color:var(--lc2)">
+      <div class="def-head" style="color:var(--lc2)">🎯 Zweck</div>
+      <div class="def-body">Logische Gruppierung von Geräten nach <strong>Abteilung, Funktion oder Sicherheitsanforderung</strong> — unabhängig vom physischen Standort im Gebäude.</div>
+    </div>
+  </div>
+
+  <div class="s1-bottom" style="margin-top:12px">
+    <div class="panel-white">
+      <div class="sec-label">Technisch</div>
+      <div style="font-size:15px;color:var(--color-text-primary);line-height:1.6">Geräte im gleichen VLAN kommunizieren direkt, als wären sie im gleichen physischen LAN. Kommunikation zwischen VLANs erfordert einen <strong>Layer-3-Router</strong> oder einen Layer-3-Switch.</div>
+    </div>
+    <div class="panel-white">
+      <div class="sec-label">Vorteile</div>
+      <div style="font-size:15px;color:var(--color-text-primary);line-height:1.7">
+        ✓ Reduktion von Broadcast-Traffic<br>
+        ✓ Sicherheitsisolierung<br>
+        ✓ Flexibles Netzwerkdesign<br>
+        ✓ Bessere Skalierbarkeit
+      </div>
+    </div>
+    <div class="panel-white">
+      <div class="sec-label">Typische Anwendung</div>
+      <div style="font-size:15px;color:var(--color-text-primary);line-height:1.7">
+        🏢 Unternehmen: VLAN je Abteilung<br>
+        🔒 DMZ: Server isoliert von Clients<br>
+        📶 WLAN: Gäste-VLAN getrennt<br>
+        🏭 Industrie: OT-Netz isoliert
+      </div>
+    </div>
+  </div>
+</div><!-- /slide1 -->
+
+<!-- ══════════════════════════════════════════════
+     SLIDE 2 — IEEE 802.1Q & Trunk
+══════════════════════════════════════════════ -->
+<div class="slide" id="slide2">
+  <div class="kicker">Sicherungsschicht · IEEE 802.1Q · Trunk &amp; Access Ports</div>
+  <div class="slide-title">IEEE 802.1Q — VLAN-Tagging</div>
+  <div class="slide-sub">Wie VLANs über Switches und Trunk-Leitungen realisiert werden</div>
+
+  <div class="s2-grid">
+
+    <!-- Left: topology + controls -->
+    <div>
+      <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:10px">
+        <button class="cbtn go" onclick="startPkt()">▶ Paket senden</button>
+        <button class="cbtn"    onclick="stopPkt()">⏹ Stop</button>
+        <span class="status" id="s2-status">VLAN wählen → Paket senden</span>
+      </div>
+
+      <!-- VLAN selector -->
+      <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:10px">
+        <button class="tgl on" id="pv10" onclick="setPktVlan(10,this)">VLAN 10 — Büro</button>
+        <button class="tgl"    id="pv20" onclick="setPktVlan(20,this)">VLAN 20 — Server</button>
+        <button class="tgl"    id="pv30" onclick="setPktVlan(30,this)">VLAN 30 — Management</button>
+      </div>
+
+      <div class="cw"><canvas id="c2" height="320"></canvas></div>
+
+      <!-- Port type explainer -->
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:12px">
+        <div class="def-card" style="background:var(--lf3);border-color:var(--lc3)">
+          <div class="def-head" style="color:var(--lc3)">Access Port</div>
+          <div class="def-body" style="font-size:14px">Gehört zu <strong>einem VLAN</strong>. Verbindet Endgerät mit Switch. Frame hat <strong>kein Tag</strong> (untagged) — das VLAN wird am Port konfiguriert.</div>
+        </div>
+        <div class="def-card" style="background:var(--lf6);border-color:var(--lc6)">
+          <div class="def-head" style="color:var(--lc6)">Trunk Port</div>
+          <div class="def-body" style="font-size:14px">Überträgt <strong>mehrere VLANs</strong> gleichzeitig. Frames erhalten ein <strong>802.1Q-Tag</strong> (4 Byte) mit VLAN-ID — für Switch-zu-Switch-Verbindungen.</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Right: 802.1Q frame + info -->
+    <div style="display:flex;flex-direction:column;gap:12px">
+
+      <div class="panel">
+        <div class="sec-label">IEEE 802.1Q Frame-Struktur</div>
+        <!-- Normal Ethernet frame -->
+        <div style="font-size:12px;color:var(--color-text-tertiary);font-family:var(--font-mono);margin-bottom:4px">Normal Ethernet (untagged)</div>
+        <div class="frame-row">
+          <div class="frame-field" style="background:#854F0B;flex:2">MAC DST</div>
+          <div class="frame-field" style="background:#3B6D11;flex:2">MAC SRC</div>
+          <div class="frame-field" style="background:#185FA5;flex:1">EType</div>
+          <div class="frame-field" style="background:#534AB7;flex:5">Daten</div>
+          <div class="frame-field" style="background:#0F6E56;flex:1">FCS</div>
+        </div>
+        <!-- 802.1Q tagged frame -->
+        <div style="font-size:12px;color:var(--color-text-tertiary);font-family:var(--font-mono);margin-bottom:4px;margin-top:10px">IEEE 802.1Q (tagged) — +4 Byte</div>
+        <div class="frame-row">
+          <div class="frame-field" style="background:#854F0B;flex:2">MAC DST</div>
+          <div class="frame-field" style="background:#3B6D11;flex:2">MAC SRC</div>
+          <div class="frame-field" id="tag-field" style="background:#c0392b;flex:2;font-size:9px">0x8100<br>VLAN-ID</div>
+          <div class="frame-field" style="background:#185FA5;flex:1">EType</div>
+          <div class="frame-field" style="background:#534AB7;flex:5">Daten</div>
+          <div class="frame-field" style="background:#0F6E56;flex:1">FCS</div>
+        </div>
+        <!-- 802.1Q Tag breakdown -->
+        <div style="margin-top:10px;background:var(--color-background-secondary);border-radius:6px;padding:10px 12px">
+          <div style="font-size:12px;font-weight:700;font-family:var(--font-mono);color:#c0392b;margin-bottom:6px">Tag Control Information (4 Byte)</div>
+          <div class="frame-row" style="margin-bottom:4px">
+            <div class="frame-field" style="background:#7f1d1d;flex:2;font-size:9px">TPID<br>0x8100</div>
+            <div class="frame-field" style="background:#9a3412;flex:1;font-size:9px">PCP<br>3 bit</div>
+            <div class="frame-field" style="background:#78350f;flex:1;font-size:9px">DEI<br>1 bit</div>
+            <div class="frame-field" id="vid-field" style="background:#c0392b;flex:4;font-size:9px">VID — VLAN-ID<br>12 bit (1–4094)</div>
+          </div>
+          <div style="font-size:13px;color:var(--color-text-secondary);line-height:1.6;margin-top:4px">
+            <strong>TPID:</strong> Tag Protocol Identifier (0x8100)<br>
+            <strong>PCP:</strong> Priority Code Point (QoS)<br>
+            <strong>VID:</strong> VLAN-Identifier — <span id="vid-val" style="font-family:var(--font-mono);font-weight:700;color:#c0392b">10</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Active VLAN info -->
+      <div class="panel-white" id="vlan-info">
+        <div class="sec-label">Aktives VLAN</div>
+        <div id="vi-name" style="font-size:20px;font-weight:700;margin-bottom:8px"></div>
+        <div class="krow"><div class="kk">VLAN-ID</div><div class="kv" id="vi-id" style="font-family:var(--font-mono);font-weight:700"></div></div>
+        <div class="krow"><div class="kk">Geräte</div><div class="kv" id="vi-dev"></div></div>
+        <div class="krow"><div class="kk">Ports</div><div class="kv" id="vi-ports"></div></div>
+        <div class="krow"><div class="kk">Subnetz</div><div class="kv" id="vi-net" style="font-family:var(--font-mono)"></div></div>
+      </div>
+    </div>
+  </div>
+</div><!-- /slide2 -->
+
+<div class="footer">VLANs · IEEE 802.1Q · SS 2026 · Christian Böttger M.Sc.</div>
+
+<script>
+/* ══════════════════════════════════
+   SHARED
+══════════════════════════════════ */
+function showSlide(n, btn){
+  document.querySelectorAll('.slide').forEach(s=>s.classList.remove('show'));
+  document.querySelectorAll('.slide-btn').forEach(b=>b.classList.remove('act'));
+  document.getElementById('slide'+n).classList.add('show');
+  btn.classList.add('act');
+  document.getElementById('sctr').textContent = n+' / 2';
+  stopBcast(); stopPkt();
+}
+
+function cv(name){ return getComputedStyle(document.documentElement).getPropertyValue(name).trim(); }
+const BG  = ()=>cv('--color-background-primary');
+const BG2 = ()=>cv('--color-background-secondary');
+const BRD = ()=>cv('--color-border-secondary');
+const TXT = ()=>cv('--color-text-primary');
+const TXT3= ()=>cv('--color-text-tertiary');
+const VA  = ()=>cv('--va'),  VAB = ()=>cv('--va-bg');
+const VB  = ()=>cv('--vb'),  VBB = ()=>cv('--vb-bg');
+const VC  = ()=>cv('--vc'),  VCB = ()=>cv('--vc-bg');
+
+function prepCanvas(id, h){
+  const c = document.getElementById(id);
+  c.height = h;
+  c.width  = c.clientWidth * devicePixelRatio;
+  c.height = h * devicePixelRatio;
+  const x = c.getContext('2d');
+  x.scale(devicePixelRatio, devicePixelRatio);
+  x.fillStyle = BG();
+  x.fillRect(0,0,c.clientWidth,h);
+  return [x, c.clientWidth, h];
+}
+
+/* ══════════════════════════════════
+   SLIDE 1 — Broadcast visualizer
+══════════════════════════════════ */
+let s1Mode = 'ohne'; // 'ohne' | 'mit'
+let s1Anim = null, s1T = 0;
+
+// Layout constants
+const S1H = 280;
+// Devices: {x,y,vlan,label,icon}
+const DEVS_OHNE = [
+  {x:.1,y:.25,vlan:0,label:'PC 1',icon:'💻'},
+  {x:.25,y:.25,vlan:0,label:'PC 2',icon:'💻'},
+  {x:.45,y:.25,vlan:0,label:'PC 3',icon:'💻'},
+  {x:.65,y:.25,vlan:0,label:'PC 4',icon:'💻'},
+  {x:.82,y:.25,vlan:0,label:'PC 5',icon:'💻'},
+];
+const DEVS_MIT = [
+  {x:.08,y:.2, vlan:1,label:'PC 1',icon:'💻'},
+  {x:.22,y:.2, vlan:1,label:'PC 2',icon:'💻'},
+  {x:.42,y:.2, vlan:2,label:'PC 3',icon:'💻'},
+  {x:.60,y:.2, vlan:2,label:'PC 4',icon:'💻'},
+  {x:.80,y:.2, vlan:3,label:'PC 5',icon:'💻'},
+];
+const VLAN_COLS = ['#888', VA(), VB(), VC()];
+const VLAN_BGS  = [BG2, VAB, VBB, VCB]; // functions
+const VLAN_NAMES= ['','VLAN 10','VLAN 20','VLAN 30'];
+
+function setMode(m, btn){
+  s1Mode = m;
+  stopBcast();
+  document.querySelectorAll('.tgl').forEach(b=>b.classList.remove('on'));
+  btn.classList.add('on');
+  drawS1Static();
+}
+
+function drawS1Static(){
+  const [x, W, H] = prepCanvas('c1', S1H);
+  const devs = s1Mode === 'mit' ? DEVS_MIT : DEVS_OHNE;
+  const SW_X = W/2, SW_Y = H*0.62;
+
+  if(s1Mode === 'mit'){
+    // Draw VLAN zones
+    [[1,0.04,0.35],[2,0.38,0.69],[3,0.72,0.96]].forEach(([v,x0,x1])=>{
+      const col = VLAN_COLS[v];
+      x.fillStyle = VLAN_BGS[v]();
+      x.strokeStyle = col;
+      x.lineWidth = 2;
+      x.setLineDash([5,4]);
+      x.beginPath();
+      const rx = x0*W, rw = (x1-x0)*W;
+      x.roundRect(rx, 8, rw, H*0.55, 8);
+      x.fill(); x.stroke();
+      x.setLineDash([]);
+      x.font='700 12px '+cv('--font-mono');
+      x.fillStyle = col; x.textAlign='center';
+      x.fillText(VLAN_NAMES[v], rx+rw/2, 24);
+    });
+  }
+
+  // Switch
+  x.fillStyle = BG2(); x.strokeStyle = BRD(); x.lineWidth = 1.5;
+  x.roundRect(SW_X-40, SW_Y-14, 80, 28, 6); x.fill(); x.stroke();
+  x.font='700 13px '+cv('--font-mono');
+  x.fillStyle=TXT(); x.textAlign='center';
+  x.fillText('Switch',SW_X,SW_Y+5);
+
+  // Devices and connections
+  devs.forEach(d=>{
+    const dx=d.x*W, dy=d.y*H;
+    const col = VLAN_COLS[d.vlan];
+    // wire
+    x.strokeStyle = s1Mode==='mit' ? col : BRD();
+    x.lineWidth=1.5; x.setLineDash([]);
+    x.beginPath(); x.moveTo(dx,dy+26); x.lineTo(SW_X, SW_Y-14); x.stroke();
+    // device circle
+    x.fillStyle = s1Mode==='mit' ? VLAN_BGS[d.vlan]() : BG2();
+    x.strokeStyle = col; x.lineWidth=2;
+    x.beginPath(); x.arc(dx,dy,18,0,Math.PI*2); x.fill(); x.stroke();
+    // icon
+    x.font='16px sans-serif'; x.textAlign='center'; x.fillText(d.icon,dx,dy+6);
+    // label
+    x.font='11px '+cv('--font-mono');
+    x.fillStyle=s1Mode==='mit'?col:TXT3();
+    x.textAlign='center'; x.fillText(d.label,dx,dy+36);
+  });
+
+  // Legend
+  if(s1Mode==='ohne'){
+    x.font='600 13px '+cv('--font-sans');
+    x.fillStyle='#c0392b'; x.textAlign='left';
+    x.fillText('⚠ Ein Switch = eine Broadcast-Domäne — alle Geräte empfangen jeden Broadcast', 12, H-12);
+  } else {
+    x.font='600 13px '+cv('--font-sans');
+    x.fillStyle=TXT(); x.textAlign='left';
+    x.fillText('✓ Broadcast bleibt im jeweiligen VLAN — andere VLANs empfangen nichts', 12, H-12);
+  }
+}
+
+let bcastFrom = 0;
+
+function startBcast(){
+  stopBcast();
+  bcastFrom = 0;
+  s1T = 0;
+  animBcast();
+}
+
+function animBcast(){
+  const devs = s1Mode === 'mit' ? DEVS_MIT : DEVS_OHNE;
+  const [x, W, H] = prepCanvas('c1', S1H);
+  drawS1Static();
+
+  const src = devs[bcastFrom];
+  const SW_X = W/2, SW_Y = H*0.62;
+
+  // Animated broadcast wave
+  const prog = (s1T % 80) / 80;
+
+  if(s1Mode === 'ohne'){
+    // Wave reaches all devices
+    devs.forEach((d,i)=>{
+      if(i===bcastFrom) return;
+      const dx=d.x*W, dy=d.y*H;
+      const p2 = Math.min(prog*2, 1);
+      const dot_x = src.x*W + (dx-src.x*W)*p2 + (SW_X-src.x*W)*Math.max(0,Math.min(p2*2,1))*(1-Math.max(0,p2-0.5)*2);
+      // Simple: 0→SW, SW→dst
+      let px, py;
+      if(prog < 0.4){ const t=prog/0.4; px=src.x*W+(SW_X-src.x*W)*t; py=src.y*H+(SW_Y-14-src.y*H)*t; }
+      else{ const t=(prog-0.4)/0.6; px=SW_X+(d.x*W-SW_X)*t; py=(SW_Y-14)+(d.y*H-(SW_Y-14))*t; }
+      x.fillStyle='#c0392b'; x.globalAlpha=0.85;
+      x.beginPath(); x.arc(px,py,8,0,Math.PI*2); x.fill();
+      x.globalAlpha=1;
+      x.font='700 9px '+cv('--font-mono'); x.fillStyle='#fff'; x.textAlign='center';
+      x.fillText('BC',px,py+3);
+    });
+    document.getElementById('s1-status').textContent='Station '+src.label+' sendet Broadcast → alle '+( devs.length-1)+' Geräte empfangen';
+  } else {
+    // Wave only reaches same VLAN devices
+    const sameVlan = devs.filter((d,i)=>d.vlan===src.vlan && i!==bcastFrom);
+    const col = VLAN_COLS[src.vlan];
+    sameVlan.forEach(d=>{
+      let px, py;
+      if(prog < 0.4){ const t=prog/0.4; px=src.x*W+(SW_X-src.x*W)*t; py=src.y*H+(SW_Y-14-src.y*H)*t; }
+      else{ const t=(prog-0.4)/0.6; px=SW_X+(d.x*W-SW_X)*t; py=(SW_Y-14)+(d.y*H-(SW_Y-14))*t; }
+      x.fillStyle=col; x.globalAlpha=0.9;
+      x.beginPath(); x.arc(px,py,8,0,Math.PI*2); x.fill();
+      x.globalAlpha=1;
+      x.font='700 9px '+cv('--font-mono'); x.fillStyle='#fff'; x.textAlign='center';
+      x.fillText('BC',px,py+3);
+    });
+    // draw X on other VLANs
+    devs.forEach((d,i)=>{
+      if(d.vlan===src.vlan) return;
+      const dx=d.x*W,dy=d.y*H;
+      if(prog > 0.5){
+        x.font='18px sans-serif'; x.textAlign='center';
+        x.fillStyle='#c0392b'; x.globalAlpha=Math.min((prog-0.5)*4,1);
+        x.fillText('🚫',dx,dy+8);
+        x.globalAlpha=1;
+      }
+    });
+    document.getElementById('s1-status').textContent=
+      VLAN_NAMES[src.vlan]+': Broadcast erreicht nur '+sameVlan.length+' Gerät(e) im selben VLAN';
+  }
+
+  s1T++;
+  if(s1T % 80 === 0){ bcastFrom = (bcastFrom+1) % devs.length; }
+  s1Anim = requestAnimationFrame(animBcast);
+}
+
+function stopBcast(){ if(s1Anim){cancelAnimationFrame(s1Anim);s1Anim=null;} drawS1Static(); document.getElementById('s1-status').textContent='Klick auf ▶ zum Starten'; }
+
+/* ══════════════════════════════════
+   SLIDE 2 — 802.1Q Trunk topology
+══════════════════════════════════ */
+const VLANS = {
+  10:{name:'VLAN 10 — Büro',   col:()=>VA(), bg:()=>VAB(), id:10, devs:['💻 PC-1','💻 PC-2'], ports:'Access 1,2',  net:'192.168.10.0/24'},
+  20:{name:'VLAN 20 — Server', col:()=>VB(), bg:()=>VBB(), id:20, devs:['🖥 SRV-1','🖥 SRV-2'], ports:'Access 3,4', net:'192.168.20.0/24'},
+  30:{name:'VLAN 30 — Mgmt',   col:()=>VC(), bg:()=>VCB(), id:30, devs:['🔒 MGMT-1'], ports:'Access 5',    net:'192.168.30.0/24'},
+};
+let selVlan = 10;
+let s2Anim = null, s2T = 0;
+const S2H = 320;
+
+function setPktVlan(v, btn){
+  selVlan = v;
+  document.querySelectorAll('#pv10,#pv20,#pv30').forEach(b=>b.classList.remove('on'));
+  btn.classList.add('on');
+  updateVlanInfo();
+  stopPkt();
+  drawS2Static();
+}
+
+function updateVlanInfo(){
+  const v = VLANS[selVlan];
+  const el = id=>document.getElementById(id);
+  el('vi-name').textContent = v.name; el('vi-name').style.color = v.col();
+  el('vi-id').textContent   = 'VID '+v.id; el('vi-id').style.color = v.col();
+  el('vi-dev').textContent  = v.devs.join(', ');
+  el('vi-ports').textContent= v.ports;
+  el('vi-net').textContent  = v.net;
+  // tag field
+  document.getElementById('tag-field').innerHTML = `0x8100<br>VID ${v.id}`;
+  document.getElementById('vid-val').textContent = v.id;
+  document.getElementById('vid-val').style.color = v.col();
+}
+
+function drawS2Static(){
+  const [x, W, H] = prepCanvas('c2', S2H);
+
+  // Two switches
+  const SW1 = {x:W*0.22, y:H*0.5};
+  const SW2 = {x:W*0.78, y:H*0.5};
+
+  // Trunk line between switches
+  x.strokeStyle = cv('--lc6'); x.lineWidth=4;
+  x.setLineDash([8,4]);
+  x.beginPath(); x.moveTo(SW1.x+44,SW1.y); x.lineTo(SW2.x-44,SW2.y); x.stroke();
+  x.setLineDash([]);
+  x.font='700 11px '+cv('--font-mono');
+  x.fillStyle=cv('--lc6'); x.textAlign='center';
+  x.fillText('Trunk (802.1Q)', W*0.5, SW1.y-12);
+  x.fillText('VLAN 10+20+30', W*0.5, SW1.y-26);
+
+  // Draw switches
+  [SW1,SW2].forEach((sw,i)=>{
+    x.fillStyle=BG2(); x.strokeStyle=BRD(); x.lineWidth=1.5;
+    x.roundRect(sw.x-44,sw.y-16,88,32,6); x.fill(); x.stroke();
+    x.font='700 13px '+cv('--font-mono');
+    x.fillStyle=TXT(); x.textAlign='center';
+    x.fillText('Switch '+(i+1), sw.x, sw.y+5);
+  });
+
+  // Devices left of SW1 (VLAN 10 and 20)
+  const left = [
+    {label:'PC-1', icon:'💻', vlan:10, x:W*0.05, y:H*0.2},
+    {label:'PC-2', icon:'💻', vlan:10, x:W*0.05, y:H*0.5},
+    {label:'SRV-1',icon:'🖥', vlan:20, x:W*0.05, y:H*0.8},
+  ];
+  // Devices right of SW2 (VLAN 10, 20, 30)
+  const right = [
+    {label:'PC-3', icon:'💻', vlan:10, x:W*0.95, y:H*0.15},
+    {label:'PC-4', icon:'💻', vlan:10, x:W*0.95, y:H*0.38},
+    {label:'SRV-2',icon:'🖥', vlan:20, x:W*0.95, y:H*0.62},
+    {label:'MGMT', icon:'🔒', vlan:30, x:W*0.95, y:H*0.85},
+  ];
+
+  [...left,...right].forEach(d=>{
+    const v = VLANS[d.vlan];
+    const isSel = d.vlan===selVlan;
+    const sw = left.includes(d) ? SW1 : SW2;
+    // wire
+    x.strokeStyle = isSel ? v.col() : BRD();
+    x.lineWidth = isSel ? 2.5 : 1.5;
+    x.globalAlpha = isSel ? 1 : 0.35;
+    x.beginPath();
+    const ex = left.includes(d) ? SW1.x-44 : SW2.x+44;
+    x.moveTo(d.x,d.y); x.lineTo(ex,sw.y); x.stroke();
+    x.globalAlpha = 1;
+    // port type label
+    x.font='10px '+cv('--font-mono');
+    x.fillStyle = isSel ? v.col() : TXT3();
+    x.globalAlpha = isSel ? 1 : 0.4;
+    x.textAlign = left.includes(d) ? 'right' : 'left';
+    const lx = left.includes(d) ? d.x-22 : d.x+22;
+    x.fillText('Access', lx, d.y-2);
+    x.globalAlpha = 1;
+    // device
+    x.fillStyle = isSel ? v.bg() : BG2();
+    x.strokeStyle = isSel ? v.col() : BRD();
+    x.lineWidth = isSel ? 2.5 : 1.5;
+    x.globalAlpha = isSel ? 1 : 0.35;
+    x.beginPath(); x.arc(d.x,d.y,16,0,Math.PI*2); x.fill(); x.stroke();
+    x.globalAlpha = 1;
+    x.font='14px sans-serif'; x.textAlign='center';
+    x.globalAlpha = isSel ? 1 : 0.3;
+    x.fillText(d.icon, d.x, d.y+5);
+    x.font='10px '+cv('--font-mono');
+    x.fillStyle = isSel ? v.col() : TXT3();
+    x.textAlign='center';
+    x.fillText(d.label, d.x, d.y+28);
+    x.globalAlpha = 1;
+  });
+
+  // VLAN legend
+  Object.values(VLANS).forEach((v,i)=>{
+    const lx=14+i*140, ly=H-18;
+    x.fillStyle=v.col(); x.beginPath(); x.arc(lx,ly,7,0,Math.PI*2); x.fill();
+    x.font='600 12px '+cv('--font-sans');
+    x.fillStyle=v.col(); x.textAlign='left';
+    x.fillText(v.name, lx+12, ly+4);
+  });
+}
+
+let pktVlan = null;
+
+function startPkt(){
+  stopPkt();
+  s2T=0; pktVlan=selVlan;
+  animPkt();
+}
+
+function animPkt(){
+  const [x, W, H] = prepCanvas('c2', S2H);
+  drawS2Static();
+
+  const v = VLANS[pktVlan];
+  const SW1={x:W*0.22,y:H*0.5}, SW2={x:W*0.78,y:H*0.5};
+  const prog = (s2T%90)/90;
+
+  // Source device (first of selected VLAN on left)
+  const src = pktVlan===10?{x:W*0.05,y:H*0.2}:pktVlan===20?{x:W*0.05,y:H*0.8}:{x:W*0.05,y:H*0.5};
+  // Dst (on right side)
+  const dst = pktVlan===10?{x:W*0.95,y:H*0.38}:pktVlan===20?{x:W*0.95,y:H*0.62}:{x:W*0.95,y:H*0.85};
+
+  // Phase 0→0.3: src→SW1 (untagged)
+  // Phase 0.3→0.5: add tag at SW1
+  // Phase 0.5→0.7: SW1→SW2 (tagged, on trunk)
+  // Phase 0.7→0.85: remove tag at SW2
+  // Phase 0.85→1: SW2→dst (untagged)
+
+  let px,py,tagged=false,phase='';
+  if(prog<0.3){ const t=prog/0.3; px=src.x+(SW1.x-44-src.x)*t; py=src.y+(SW1.y-src.y)*t; phase='Access → Switch 1'; }
+  else if(prog<0.5){ const t=(prog-0.3)/0.2; px=SW1.x-44+(SW1.x+44-SW1.x+44)*t/2; py=SW1.y; tagged=t>0.5; phase='Switch 1 fügt 802.1Q-Tag hinzu'; }
+  else if(prog<0.7){ const t=(prog-0.5)/0.2; px=SW1.x+44+(SW2.x-44-SW1.x-44)*t; py=SW1.y; tagged=true; phase='Trunk: Frame mit VLAN-Tag (VID '+pktVlan+')'; }
+  else if(prog<0.85){ const t=(prog-0.7)/0.15; px=SW2.x-44+(SW2.x+44-SW2.x+44)*t/2; py=SW2.y; tagged=t<0.5; phase='Switch 2 entfernt Tag (Access Port)'; }
+  else{ const t=(prog-0.85)/0.15; px=SW2.x+44+(dst.x-SW2.x-44)*t; py=SW2.y+(dst.y-SW2.y)*t; phase='Zustellung an Zielgerät (untagged)'; }
+
+  // Packet dot
+  x.fillStyle=v.col();
+  x.shadowBlur=8; x.shadowColor=v.col();
+  x.beginPath(); x.arc(px,py,10,0,Math.PI*2); x.fill();
+  x.shadowBlur=0;
+  // Tag indicator
+  if(tagged){
+    x.fillStyle='#c0392b'; x.font='700 8px '+cv('--font-mono');
+    x.textAlign='center'; x.fillStyle='#fff';
+    x.fillText('TAG',px,py+3);
+    // small tag rect behind dot
+    x.fillStyle='#c0392b'; x.globalAlpha=0.7;
+    x.roundRect(px+8,py-10,24,14,3); x.fill();
+    x.globalAlpha=1;
+    x.font='700 8px '+cv('--font-mono'); x.fillStyle='#fff'; x.textAlign='center';
+    x.fillText('VID'+pktVlan,px+20,py-1);
+  } else {
+    x.font='700 8px '+cv('--font-mono'); x.fillStyle='#fff'; x.textAlign='center';
+    x.fillText('PKT',px,py+3);
+  }
+
+  document.getElementById('s2-status').textContent = phase;
+  s2T++;
+  s2Anim = requestAnimationFrame(animPkt);
+}
+
+function stopPkt(){ if(s2Anim){cancelAnimationFrame(s2Anim);s2Anim=null;} drawS2Static(); document.getElementById('s2-status').textContent='VLAN wählen → Paket senden'; }
+
+/* ══ INIT ══ */
+window.addEventListener('load',()=>{
+  drawS1Static();
+  updateVlanInfo();
+  drawS2Static();
+});
+window.addEventListener('resize',()=>{
+  drawS1Static();
+  drawS2Static();
+});
+</script>
+</body>
+</html>

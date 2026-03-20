@@ -1,0 +1,684 @@
+<!DOCTYPE html>
+<html lang="de">
+<head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Netzkoppelelemente</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --lc1:#854F0B;--lf1:#FAEEDA;--lt1:#633806;
+  --lc2:#3B6D11;--lf2:#EAF3DE;--lt2:#27500A;
+  --lc3:#0F6E56;--lf3:#E1F5EE;--lt3:#085041;
+  --lc4:#185FA5;--lf4:#E6F1FB;--lt4:#0C447C;
+  --lc5:#185FA5;--lf5:#E6F1FB;--lt5:#0C447C;
+  --lc6:#534AB7;--lf6:#EEEDFE;--lt6:#3C3489;
+  --lc7:#534AB7;--lf7:#EEEDFE;--lt7:#3C3489;
+  /* semantic */
+  --col-coll:#D4380D;--col-coll-bg:#FFF2E8;--col-coll-border:#FA8C16;
+  --col-bcast:#1677FF;--col-bcast-bg:#E6F4FF;--col-bcast-border:#69B1FF;
+  /* Claude UI vars fallback */
+  --color-background-primary:#ffffff;
+  --color-background-secondary:#f5f5f5;
+  --color-text-primary:#111;
+  --color-text-secondary:#555;
+  --color-text-tertiary:#888;
+  --color-border-primary:#bbb;
+  --color-border-secondary:#ddd;
+  --color-border-tertiary:#eee;
+  --border-radius-md:8px;
+  --border-radius-lg:12px;
+  --font-sans:system-ui,-apple-system,sans-serif;
+  --font-mono:'SF Mono',Consolas,monospace;
+}
+@media(prefers-color-scheme:dark){:root{
+  --lc1:#EF9F27;--lf1:#3d2200;--lt1:#FAEEDA;
+  --lc2:#97C459;--lf2:#1a3300;--lt2:#EAF3DE;
+  --lc3:#5DCAA5;--lf3:#003326;--lt3:#E1F5EE;
+  --lc4:#85B7EB;--lf4:#002966;--lt4:#E6F1FB;
+  --lc5:#85B7EB;--lf5:#002966;--lt5:#E6F1FB;
+  --lc6:#AFA9EC;--lf6:#1e1966;--lt6:#EEEDFE;
+  --lc7:#AFA9EC;--lf7:#1e1966;--lt7:#EEEDFE;
+  --col-coll:#FF7A45;--col-coll-bg:#3d1800;--col-coll-border:#D4380D;
+  --col-bcast:#4096FF;--col-bcast-bg:#001d57;--col-bcast-border:#1677FF;
+  --color-background-primary:#1a1a1a;
+  --color-background-secondary:#242424;
+  --color-text-primary:#f0f0f0;
+  --color-text-secondary:#aaa;
+  --color-text-tertiary:#666;
+  --color-border-primary:#444;
+  --color-border-secondary:#333;
+  --color-border-tertiary:#2a2a2a;
+}}
+
+body{font-family:var(--font-sans);background:var(--color-background-primary);color:var(--color-text-primary);padding:1.5rem 1rem 3rem}
+
+/* ── View nav ── */
+.vnav{display:flex;gap:6px;flex-wrap:wrap;justify-content:center;margin-bottom:1.5rem}
+.vbtn{cursor:pointer;padding:9px 20px;border-radius:var(--border-radius-md);border:1px solid var(--color-border-secondary);background:transparent;color:var(--color-text-secondary);font-size:17px;font-family:var(--font-sans);transition:all .15s;line-height:1.4}
+.vbtn:hover{background:var(--color-background-secondary);color:var(--color-text-primary)}
+.vbtn.act{background:var(--color-background-secondary);border-color:var(--color-border-primary);color:var(--color-text-primary);font-weight:600}
+.view{display:none}.view.show{display:block}
+
+/* ── Device tabs (View 1) ── */
+.tab{cursor:pointer;padding:9px 20px;border-radius:var(--border-radius-md);border:1px solid var(--color-border-secondary);background:transparent;color:var(--color-text-secondary);font-size:18px;font-family:var(--font-sans);transition:all .15s;line-height:1.4}
+.tab:hover{background:var(--color-background-secondary);color:var(--color-text-primary)}
+.tab.sel{background:var(--color-background-secondary);border-color:var(--color-border-primary);color:var(--color-text-primary);font-weight:600}
+
+/* ── OSI stack rows ── */
+.lrow{display:flex;align-items:center;gap:7px;padding:7px 11px;border-radius:5px;border:0.5px solid var(--color-border-tertiary);background:var(--color-background-primary);transition:background .25s,border-color .25s;cursor:default}
+.lrow.r{flex-direction:row-reverse}.lrow.r .lname{text-align:right;flex:1}
+.lnum{width:28px;height:28px;border-radius:4px;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:600;font-family:var(--font-mono);flex-shrink:0;background:var(--color-background-secondary);color:var(--color-text-tertiary);transition:all .25s}
+.lname{font-size:16px;color:var(--color-text-secondary);white-space:nowrap;transition:color .25s}
+.lrow.a1{background:var(--lf1);border-color:var(--lc1)}.lrow.a1 .lnum{background:var(--lc1);color:#fff}.lrow.a1 .lname{color:var(--lc1)}
+.lrow.a2{background:var(--lf2);border-color:var(--lc2)}.lrow.a2 .lnum{background:var(--lc2);color:#fff}.lrow.a2 .lname{color:var(--lc2)}
+.lrow.a3{background:var(--lf3);border-color:var(--lc3)}.lrow.a3 .lnum{background:var(--lc3);color:#fff}.lrow.a3 .lname{color:var(--lc3)}
+.lrow.a4{background:var(--lf4);border-color:var(--lc4)}.lrow.a4 .lnum{background:var(--lc4);color:#fff}.lrow.a4 .lname{color:var(--lc4)}
+.lrow.a5{background:var(--lf5);border-color:var(--lc5)}.lrow.a5 .lnum{background:var(--lc5);color:#fff}.lrow.a5 .lname{color:var(--lc5)}
+.lrow.a6{background:var(--lf6);border-color:var(--lc6)}.lrow.a6 .lnum{background:var(--lc6);color:#fff}.lrow.a6 .lname{color:var(--lc6)}
+.lrow.a7{background:var(--lf7);border-color:var(--lc7)}.lrow.a7 .lnum{background:var(--lc7);color:#fff}.lrow.a7 .lname{color:var(--lc7)}
+
+/* ── Layer indicator pills ── */
+.lind{width:34px;height:34px;border-radius:4px;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:600;font-family:var(--font-mono);border:0.5px solid var(--color-border-tertiary);background:var(--color-background-primary);color:var(--color-text-tertiary);transition:all .25s}
+.lind.a1{background:var(--lc1);color:#fff;border-color:var(--lc1)}.lind.a2{background:var(--lc2);color:#fff;border-color:var(--lc2)}
+.lind.a3{background:var(--lc3);color:#fff;border-color:var(--lc3)}.lind.a4{background:var(--lc4);color:#fff;border-color:var(--lc4)}
+.lind.a5{background:var(--lc5);color:#fff;border-color:var(--lc5)}.lind.a6{background:var(--lc6);color:#fff;border-color:var(--lc6)}
+.lind.a7{background:var(--lc7);color:#fff;border-color:var(--lc7)}
+
+/* ── Toggle btn ── */
+.toggle-btn{cursor:pointer;display:inline-flex;align-items:center;gap:8px;padding:9px 20px;border-radius:var(--border-radius-md);border:1px solid var(--color-border-secondary);background:var(--color-background-primary);color:var(--color-text-secondary);font-size:17px;font-family:var(--font-sans);transition:all .15s;line-height:1.4}
+.toggle-btn:hover{background:var(--color-background-secondary);color:var(--color-text-primary);border-color:var(--color-border-primary)}
+.toggle-btn .arrow{display:inline-block;transition:transform .25s;font-size:13px}
+.toggle-btn.open .arrow{transform:rotate(180deg)}
+#info-wrap{overflow:hidden;max-height:0;transition:max-height .35s ease,opacity .3s ease;opacity:0}
+#info-wrap.open{max-height:800px;opacity:1}
+
+/* ── Domain viz (View 2) ── */
+.domain-node{width:56px;height:56px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;font-family:var(--font-mono);border:2px solid var(--color-border-secondary);background:var(--color-background-secondary);color:var(--color-text-primary);cursor:default;transition:all .2s;user-select:none}
+.domain-pc{width:48px;height:48px;border-radius:8px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;background:var(--color-background-secondary);border:1.5px solid var(--color-border-secondary);font-size:10px;color:var(--color-text-tertiary);font-family:var(--font-mono)}
+.dom-zone{border-radius:8px;padding:10px;transition:background .3s,border-color .3s;border:2px dashed transparent}
+.dom-zone.coll{background:var(--col-coll-bg);border-color:var(--col-coll-border)}
+.dom-zone.bcast{background:var(--col-bcast-bg);border-color:var(--col-bcast-border)}
+.dom-legend-pill{display:inline-flex;align-items:center;gap:6px;padding:5px 12px;border-radius:20px;font-size:14px;font-weight:500}
+
+/* ── Alltag cards (View 3) ── */
+.alltag-card{background:var(--color-background-secondary);border:1px solid var(--color-border-tertiary);border-radius:var(--border-radius-lg);padding:1.25rem;transition:border-color .2s}
+.alltag-card:hover{border-color:var(--color-border-primary)}
+.alltag-example{background:var(--color-background-primary);border:1px solid var(--color-border-tertiary);border-radius:var(--border-radius-md);padding:10px 14px;margin-top:8px;display:flex;align-items:center;gap:10px}
+
+/* ── Comparison table (View 4) ── */
+.cmp-table{width:100%;border-collapse:collapse;font-size:15px}
+.cmp-table th{padding:10px 12px;text-align:left;font-size:13px;font-weight:600;text-transform:uppercase;letter-spacing:.07em;font-family:var(--font-mono);color:var(--color-text-tertiary);border-bottom:1.5px solid var(--color-border-secondary);white-space:nowrap}
+.cmp-table td{padding:11px 12px;border-bottom:1px solid var(--color-border-tertiary);vertical-align:top;line-height:1.45}
+.cmp-table tr:last-child td{border-bottom:none}
+.cmp-table tr:hover td{background:var(--color-background-secondary)}
+.cmp-badge{display:inline-block;padding:2px 8px;border-radius:4px;font-size:13px;font-weight:600;font-family:var(--font-mono)}
+.cmp-dot{display:inline-block;width:12px;height:12px;border-radius:50%;margin-right:4px;vertical-align:middle}
+.cmp-yes{color:#3B6D11;font-weight:700}.cmp-no{color:var(--color-text-tertiary)}
+
+/* ── Animations (View 1) ── */
+@media(prefers-reduced-motion:no-preference){
+  @keyframes travel{
+    0%{left:calc(-1 * var(--sw,16px));opacity:0;transform:translateY(-50%) scale(.5)}
+    8%{left:5px;opacity:1;transform:translateY(-50%) scale(1)}
+    44%{left:calc(50% - var(--sw,16px) / 2);transform:translateY(-50%) scale(1)}
+    51%{left:calc(50% - var(--sw,16px) / 2);transform:translateY(-50%) scale(var(--ms,1.2))}
+    58%{transform:translateY(-50%) scale(var(--so,1))}
+    92%{left:calc(100% + var(--sw,16px));opacity:1;transform:translateY(-50%) scale(var(--so,1))}
+    100%{left:calc(100% + var(--sw,16px));opacity:0}
+  }
+  @keyframes travel-b{
+    0%,44%{left:calc(50% - 6px);opacity:0;transform:translateY(-50%) scale(0)}
+    52%{opacity:.75;transform:translateY(-50%) scale(.85)}
+    92%{left:calc(100% + 14px);opacity:.5}100%{opacity:0}
+  }
+  .sdot{animation:travel 2.6s ease-in-out infinite}
+  .sdb{animation:travel-b 2.6s ease-in-out infinite .07s}
+  .sdc{animation:travel-b 2.6s ease-in-out infinite .16s}
+}
+</style>
+</head>
+<body>
+
+<!-- ══ HEADER ══ -->
+<div style="text-align:center;margin-bottom:1.75rem">
+  <div style="font-size:16px;letter-spacing:.1em;text-transform:uppercase;color:var(--color-text-tertiary);margin-bottom:5px;font-family:var(--font-mono)">Sichere Netzwerke · SS 2026 · FOM Hochschule</div>
+  <h1 style="font-size:36px;font-weight:500;color:var(--color-text-primary)">Netzkoppelelemente</h1>
+  <p style="font-size:19px;color:var(--color-text-secondary);margin-top:5px">ISO/OSI-Referenzmodell — interaktive Lernhilfe</p>
+</div>
+
+<!-- ══ VIEW NAVIGATION ══ -->
+<div class="vnav">
+  <button class="vbtn act" onclick="showView('v1',this)">① OSI-Schichten</button>
+  <button class="vbtn" onclick="showView('v2',this)">② Kollisions- &amp; Broadcast-Domänen</button>
+  <button class="vbtn" onclick="showView('v3',this)">③ Alltagsbeispiele</button>
+  <button class="vbtn" onclick="showView('v4',this)">④ Direktvergleich</button>
+</div>
+
+<!-- ═══════════════════════════════════════════
+     VIEW 1 — OSI-Schichten
+═══════════════════════════════════════════ -->
+<div id="v1" class="view show">
+
+  <div id="tabs" style="display:flex;gap:8px;flex-wrap:wrap;justify-content:center;margin-bottom:1.5rem"></div>
+
+  <div style="background:var(--color-background-secondary);border:1px solid var(--color-border-tertiary);border-radius:var(--border-radius-lg);padding:1.5rem;margin-bottom:1.25rem;overflow-x:auto">
+    <div style="display:grid;grid-template-columns:1fr auto 1fr;gap:20px;align-items:center;min-width:500px">
+
+      <div>
+        <div style="font-size:15px;color:var(--color-text-tertiary);text-align:right;margin-bottom:8px;letter-spacing:.08em;text-transform:uppercase;font-family:var(--font-mono)">Station A · Netz 1</div>
+        <div id="osi-a" style="display:flex;flex-direction:column;gap:4px"></div>
+      </div>
+
+      <div style="display:flex;flex-direction:column;align-items:center;gap:14px;min-width:220px">
+        <!-- wire -->
+        <div style="width:100%;height:54px;position:relative;background:var(--color-background-primary);border:1px solid var(--color-border-tertiary);border-radius:5px;overflow:hidden">
+          <div style="position:absolute;top:50%;left:0;right:0;height:1px;background:var(--color-border-secondary);transform:translateY(-50%)"></div>
+          <div id="s0" class="sdot" style="position:absolute;top:50%;left:-16px;overflow:hidden"></div>
+          <div id="s1" class="sdb" style="position:absolute;width:12px;height:12px;border-radius:50%;top:50%;display:none"></div>
+          <div id="s2" class="sdc" style="position:absolute;width:12px;height:12px;border-radius:50%;top:50%;display:none"></div>
+        </div>
+
+        <!-- legend -->
+        <div style="width:100%;background:var(--color-background-primary);border:1px solid var(--color-border-tertiary);border-radius:5px;padding:9px 12px">
+          <div style="font-size:12px;text-transform:uppercase;letter-spacing:.08em;color:var(--color-text-tertiary);font-family:var(--font-mono);margin-bottom:7px">Legende Dateneinheit</div>
+          <div style="display:flex;flex-direction:column;gap:5px">
+            <div id="leg-bits" style="display:flex;align-items:center;gap:8px;transition:opacity .2s">
+              <div style="width:18px;height:18px;border-radius:50%;background:#854F0B;flex-shrink:0"></div>
+              <span style="font-size:14px;color:var(--color-text-secondary)">Bits / Signal (L1)</span>
+            </div>
+            <div id="leg-frame" style="display:flex;align-items:center;gap:8px;transition:opacity .2s">
+              <div style="width:40px;height:18px;border-radius:3px;background:#3B6D11;flex-shrink:0;overflow:hidden"><div style="height:7px;background:rgba(0,0,0,0.25)"></div></div>
+              <span style="font-size:14px;color:var(--color-text-secondary)">Frame (L2)</span>
+            </div>
+            <div id="leg-packet" style="display:flex;align-items:center;gap:8px;transition:opacity .2s">
+              <div style="width:46px;height:18px;border-radius:3px;background:#0F6E56;flex-shrink:0;overflow:hidden"><div style="height:7px;background:rgba(0,0,0,0.2);display:flex;align-items:center;padding:0 3px"><span style="font-size:7px;color:#fff;font-weight:700;font-family:monospace">IP</span></div></div>
+              <span style="font-size:14px;color:var(--color-text-secondary)">IP-Paket (L3)</span>
+            </div>
+            <div id="leg-app" style="display:flex;align-items:center;gap:8px;transition:opacity .2s">
+              <div style="width:48px;height:18px;border-radius:3px;background:#534AB7;flex-shrink:0;overflow:hidden"><div style="display:flex;height:100%"><div style="flex:1;background:rgba(255,255,255,0.35)"></div><div style="flex:2;background:rgba(0,0,0,0.15)"></div><div style="flex:1;background:rgba(255,255,255,0.35)"></div></div></div>
+              <span style="font-size:14px;color:var(--color-text-secondary)">Anwendungsdaten (L7)</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- device box -->
+        <div style="background:var(--color-background-primary);border:1px solid var(--color-border-secondary);border-radius:var(--border-radius-lg);padding:14px 18px;text-align:center;width:100%">
+          <div id="dicon" style="width:48px;height:48px;border-radius:var(--border-radius-md);margin:0 auto 9px;display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:600;font-family:var(--font-mono)"></div>
+          <div id="dname" style="font-size:22px;font-weight:500;color:var(--color-text-primary)"></div>
+          <div id="dosi" style="font-size:16px;color:var(--color-text-tertiary);margin-top:2px;font-family:var(--font-mono)"></div>
+        </div>
+
+        <div>
+          <div style="font-size:14px;color:var(--color-text-tertiary);text-align:center;margin-bottom:6px;letter-spacing:.06em;text-transform:uppercase;font-family:var(--font-mono)">Aktive OSI-Schichten</div>
+          <div id="linds" style="display:flex;gap:4px;justify-content:center"></div>
+        </div>
+
+        <div id="anote" style="font-size:15px;color:var(--color-text-secondary);text-align:center;line-height:1.55;padding:9px 13px;background:var(--color-background-primary);border-radius:5px;border:1px solid var(--color-border-tertiary);max-width:220px"></div>
+      </div>
+
+      <div>
+        <div id="stbl" style="font-size:15px;color:var(--color-text-tertiary);margin-bottom:8px;letter-spacing:.08em;text-transform:uppercase;font-family:var(--font-mono)">Station B</div>
+        <div id="osi-b" style="display:flex;flex-direction:column;gap:4px"></div>
+      </div>
+    </div>
+  </div>
+
+  <div style="display:flex;justify-content:center;margin-bottom:10px">
+    <button id="info-btn" class="toggle-btn" onclick="toggleInfo()">
+      <span id="btn-label">Erklärung einblenden</span><span class="arrow">▼</span>
+    </button>
+  </div>
+  <div id="info-wrap">
+    <div style="background:var(--color-background-primary);border:1px solid var(--color-border-tertiary);border-radius:var(--border-radius-lg);padding:1.5rem;margin-bottom:1rem">
+      <div style="display:flex;align-items:center;gap:12px;margin-bottom:12px;flex-wrap:wrap">
+        <div id="iacc" style="width:4px;height:28px;border-radius:2px;flex-shrink:0"></div>
+        <div id="ititle" style="font-size:26px;font-weight:500;color:var(--color-text-primary)"></div>
+        <div id="ibadge" style="font-size:16px;padding:3px 10px;border-radius:5px;font-family:var(--font-mono)"></div>
+      </div>
+      <p id="idesc" style="font-size:18px;color:var(--color-text-secondary);line-height:1.65;margin-bottom:14px"></p>
+      <div id="irows" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:10px"></div>
+    </div>
+  </div>
+</div><!-- /v1 -->
+
+<!-- ═══════════════════════════════════════════
+     VIEW 2 — Kollisions- & Broadcast-Domänen
+═══════════════════════════════════════════ -->
+<div id="v2" class="view">
+  <div style="margin-bottom:1.25rem">
+    <!-- Legende -->
+    <div style="display:flex;gap:16px;flex-wrap:wrap;justify-content:center;margin-bottom:1.5rem">
+      <div class="dom-legend-pill" style="background:var(--col-coll-bg);border:1.5px dashed var(--col-coll-border);color:var(--col-coll)">
+        <span style="font-size:18px">💥</span> Kollisionsdomäne
+      </div>
+      <div class="dom-legend-pill" style="background:var(--col-bcast-bg);border:1.5px dashed var(--col-bcast-border);color:var(--col-bcast)">
+        <span style="font-size:18px">📢</span> Broadcast-Domäne
+      </div>
+    </div>
+
+    <!-- Device selector -->
+    <div id="dom-tabs" style="display:flex;gap:8px;flex-wrap:wrap;justify-content:center;margin-bottom:1.5rem"></div>
+
+    <!-- Diagram area -->
+    <div id="dom-diagram" style="background:var(--color-background-secondary);border:1px solid var(--color-border-tertiary);border-radius:var(--border-radius-lg);padding:1.5rem;min-height:200px"></div>
+
+    <!-- Info boxes -->
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:1rem">
+      <div style="background:var(--col-coll-bg);border:1.5px solid var(--col-coll-border);border-radius:var(--border-radius-lg);padding:1.25rem">
+        <div style="font-size:14px;text-transform:uppercase;letter-spacing:.08em;color:var(--col-coll);font-family:var(--font-mono);font-weight:600;margin-bottom:6px">Kollisionsdomänen</div>
+        <div id="dom-coll-count" style="font-size:36px;font-weight:700;color:var(--col-coll);line-height:1"></div>
+        <div id="dom-coll-desc" style="font-size:15px;color:var(--color-text-secondary);margin-top:6px;line-height:1.5"></div>
+      </div>
+      <div style="background:var(--col-bcast-bg);border:1.5px solid var(--col-bcast-border);border-radius:var(--border-radius-lg);padding:1.25rem">
+        <div style="font-size:14px;text-transform:uppercase;letter-spacing:.08em;color:var(--col-bcast);font-family:var(--font-mono);font-weight:600;margin-bottom:6px">Broadcast-Domänen</div>
+        <div id="dom-bcast-count" style="font-size:36px;font-weight:700;color:var(--col-bcast);line-height:1"></div>
+        <div id="dom-bcast-desc" style="font-size:15px;color:var(--color-text-secondary);margin-top:6px;line-height:1.5"></div>
+      </div>
+    </div>
+  </div>
+</div><!-- /v2 -->
+
+<!-- ═══════════════════════════════════════════
+     VIEW 3 — Alltagsbeispiele
+═══════════════════════════════════════════ -->
+<div id="v3" class="view">
+  <div id="alltag-grid" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:14px"></div>
+</div><!-- /v3 -->
+
+<!-- ═══════════════════════════════════════════
+     VIEW 4 — Direktvergleich
+═══════════════════════════════════════════ -->
+<div id="v4" class="view">
+  <div style="overflow-x:auto;border:1px solid var(--color-border-tertiary);border-radius:var(--border-radius-lg)">
+    <table class="cmp-table">
+      <thead>
+        <tr style="background:var(--color-background-secondary)">
+          <th>Gerät</th>
+          <th>OSI-Schicht</th>
+          <th>Dateneinheit</th>
+          <th>Weiterleitung</th>
+          <th>Kollisions&shy;domänen</th>
+          <th>Broadcast&shy;domänen</th>
+          <th>Intelligenz</th>
+        </tr>
+      </thead>
+      <tbody id="cmp-tbody"></tbody>
+    </table>
+  </div>
+  <div style="margin-top:12px;font-size:14px;color:var(--color-text-tertiary);text-align:center;font-family:var(--font-mono)">
+    <span style="background:var(--col-coll-bg);color:var(--col-coll);padding:2px 8px;border-radius:4px;margin-right:8px">■ Kollisionsdomäne</span>
+    <span style="background:var(--col-bcast-bg);color:var(--col-bcast);padding:2px 8px;border-radius:4px">■ Broadcast-Domäne</span>
+  </div>
+</div><!-- /v4 -->
+
+<div style="text-align:center;margin-top:20px;font-size:15px;color:var(--color-text-tertiary);font-family:var(--font-mono)">ISO/OSI · SS 2026 · Christian Böttger M.Sc.</div>
+
+<script>
+/* ═══ DATA ═══ */
+const OSI=[
+  {id:7,name:'Anwendungsschicht'},{id:6,name:'Darstellungsschicht'},
+  {id:5,name:'Sitzungsschicht'},{id:4,name:'Transportschicht'},
+  {id:3,name:'Vermittlungsschicht'},{id:2,name:'Sicherungsschicht'},
+  {id:1,name:'Bitübertragungsschicht'},
+];
+
+const DEV=[
+  {id:'repeater',name:'Repeater',osi:'Schicht 1',layers:[1],icon:'REP',il:1,ms:'2.5',so:'1.8',hub:false,net2:false,unit:'bits',
+   note:'Signal wird auf Schicht 1 verstärkt und weitergeleitet',
+   desc:'Verstärkt das physikalische Signal auf Schicht 1, ohne Daten zu interpretieren. Verbindet zwei Netzwerksegmente transparent auf Bit-Ebene.',
+   rows:[['Dateneinheit','Bits / Signale'],['Weiterleitung','Signal wird verstärkt weitergeleitet'],['Intelligenz','Keine — reine Signalverstärkung'],['Besonderheit','Rauschen, Kollisionen und Jitter werden ebenfalls mitverstärkt']],
+   coll:{n:1,label:'1 (gemeinsam)',desc:'Repeater verlängert die bestehende Kollisionsdomäne. Alle Stationen bleiben in einer einzigen Domäne — Kollisionen breiten sich durch.'},
+   bcast:{n:1,label:'1 (gemeinsam)',desc:'Broadcasts werden ungefiltert verstärkt und weitergeleitet. Eine gemeinsame Broadcast-Domäne auf beiden Seiten.'},
+   diagram:'repeater',
+   alltag:{emoji:'📡',desc:'Verlängert Netzwerksegmente auf physikalischer Ebene.',examples:[{icon:'📶',name:'WLAN-Repeater',tip:'z. B. Fritz!WLAN Repeater 3000 — verlängert WLAN-Signal im Haus'},{icon:'⚡',name:'Powerline-Adapter',tip:'Sendet Netzwerksignal über die Stromleitung'}]},
+   cmpRow:['L1','Bits / Signal','Broadcast (verstärkt)','1 (erweitert)','1','Keine'],
+  },
+  {id:'hub',name:'Hub',osi:'Schicht 1',layers:[1],icon:'HUB',il:1,ms:'1.1',so:'1.0',hub:true,net2:false,unit:'bits',
+   note:'Eingehendes Signal wird an ALLE Ports verteilt (Broadcast)',
+   desc:'Verteilt jedes Signal ungefiltert an alle Ports. Alle Geräte sehen den gesamten Traffic. In modernen Netzen vollständig durch Switches ersetzt.',
+   rows:[['Dateneinheit','Bits / Signale'],['Weiterleitung','Broadcast — ungefiltert an ALLE Ports'],['Intelligenz','Keine'],['Besonderheit','Alle Geräte teilen eine gemeinsame Kollisionsdomäne']],
+   coll:{n:1,label:'1 (alle Ports)',desc:'Alle am Hub angeschlossenen Geräte teilen eine Kollisionsdomäne. Sendet ein Gerät, müssen alle anderen warten (CSMA/CD).'},
+   bcast:{n:1,label:'1 (alle Ports)',desc:'Broadcast-Pakete werden an alle Ports geleitet. Alle Geräte am Hub befinden sich in einer gemeinsamen Broadcast-Domäne.'},
+   diagram:'hub',
+   alltag:{emoji:'🔌',desc:'Verteilerstecker auf Netzwerkebene — heute weitgehend veraltet.',examples:[{icon:'🗄️',name:'4-/8-Port Hub (veraltet)',tip:'Früher in kleinen Büros, heute durch Switches ersetzt'},{icon:'🏫',name:'Alte Schulnetzwerke',tip:'Vor ca. 2000 standard in Schulen und kleinen Büros'}]},
+   cmpRow:['L1','Bits / Signal','Broadcast (alle Ports)','1 (alle Ports)','1','Keine'],
+  },
+  {id:'bridge',name:'Bridge',osi:'Schicht 1–2',layers:[1,2],icon:'BRI',il:2,ms:'1.2',so:'1.0',hub:false,net2:false,unit:'frame',
+   note:'Frame wird auf Schicht 2 per MAC-Adresse gefiltert',
+   desc:'Verbindet zwei Segmente auf Schicht 2. Filtert anhand von MAC-Adressen und entkoppelt Kollisionsdomänen. Lokaler Traffic verbleibt im Segment.',
+   rows:[['Dateneinheit','Frames'],['Weiterleitung','Gezielt nach MAC-Adresse'],['Intelligenz','Einfach — lernt MAC-Adressen durch Beobachtung'],['Besonderheit','Lasttrennung: lokaler Traffic bleibt im Segment']],
+   coll:{n:2,label:'2 (je Segment)',desc:'Die Bridge trennt zwei Kollisionsdomänen. Kollisionen auf Seite A breiten sich nicht auf Seite B aus — Lasttrennung.'},
+   bcast:{n:1,label:'1 (gemeinsam)',desc:'Broadcasts überqueren die Bridge und erreichen alle Geräte. Es existiert weiterhin eine gemeinsame Broadcast-Domäne.'},
+   diagram:'bridge',
+   alltag:{emoji:'🌉',desc:'Verbindet Segmente auf Schicht 2 — heute meist als WLAN-Brücke.',examples:[{icon:'📶',name:'WLAN Access Point (Brückenmodus)',tip:'Verbindet WLAN-Segment mit Kabel-LAN auf L2'},{icon:'⚡',name:'Powerline mit LAN-Bridge',tip:'Devolo oder AVM Powerline im Bridge-Modus'}]},
+   cmpRow:['L1–L2','Frames (MAC)','MAC-gezielt','2 (je Segment)','1','Einfach (MAC-Tabelle)'],
+  },
+  {id:'switch',name:'Switch',osi:'Schicht 1–2',layers:[1,2],icon:'SW',il:2,ms:'1.2',so:'1.0',hub:false,net2:false,unit:'frame',
+   note:'Frame wird per CAM-Tabelle gezielt an Ziel-Port geleitet',
+   desc:'Wie Bridge, aber mit höherer Portdichte und Durchsatz. Speichert MAC-Adressen in der CAM-Tabelle. Standard in modernen LANs.',
+   rows:[['Dateneinheit','Frames'],['Weiterleitung','Gezielt an Ziel-Port via CAM-Tabelle'],['Intelligenz','Mittel — MAC-Adresstabelle (CAM-Table)'],['Besonderheit','Jeder Port = eigene Kollisionsdomäne']],
+   coll:{n:'N',label:'N (1 pro Port)',desc:'Jeder Switch-Port bildet eine eigene Kollisionsdomäne — bei Vollduplex sogar kollisionsfrei. Maximale Effizienz.'},
+   bcast:{n:1,label:'1 (gemeinsam)',desc:'Broadcasts werden an alle Ports weitergeleitet (außer bei VLANs). Ein VLAN = eine Broadcast-Domäne.'},
+   diagram:'switch',
+   alltag:{emoji:'🔀',desc:'Herzstück moderner LANs — in jedem Heimnetz und Büro.',examples:[{icon:'🏠',name:'Fritz!Box / Heimnetz-Switch',tip:'Integrierter 4-Port-Switch in jeder Fritz!Box'},{icon:'🏢',name:'TP-Link / Netgear Managed Switch',tip:'z. B. TL-SG108 — 8 Ports, VLAN-fähig'},{icon:'🏛️',name:'Cisco Catalyst (Unternehmens-LAN)',tip:'VLAN, QoS, Spanning Tree — Kernelement in Firmennetzwerken'}]},
+   cmpRow:['L1–L2','Frames (MAC)','CAM-Tabelle (Port-gezielt)','N (1 pro Port)','1 (ohne VLAN)','Mittel (CAM-Table)'],
+  },
+  {id:'router',name:'Router',osi:'Schicht 1–3',layers:[1,2,3],icon:'RO',il:3,ms:'1.3',so:'1.0',hub:false,net2:true,unit:'packet',
+   note:'Paket wird per IP-Adresse und Routing-Tabelle weitergeleitet',
+   desc:'Verbindet IP-Netze auf Schicht 3. Entscheidet via IP-Adresse und Routing-Tabellen. Trennt Broadcast-Domänen.',
+   rows:[['Dateneinheit','Pakete (IP-Datagramme)'],['Weiterleitung','Gezielt nach Ziel-IP und Routing-Tabelle'],['Intelligenz','Hoch — OSPF, BGP, RIP'],['Besonderheit','Verbindet LAN ↔ WAN / Internet']],
+   coll:{n:'N',label:'N (je Interface)',desc:'Jedes Router-Interface definiert eine eigene Kollisionsdomäne (in Verbindung mit Switch). Der Router selbst ist kein Shared Medium.'},
+   bcast:{n:'N',label:'N (je Interface)',desc:'Der Router trennt Broadcast-Domänen. Ein Broadcast auf Netz 1 erreicht Netz 2 nicht — wesentlicher Unterschied zu Switch und Bridge.'},
+   diagram:'router',
+   alltag:{emoji:'🌐',desc:'Verbindet verschiedene Netze — das entscheidende Gerät am Netzübergang.',examples:[{icon:'📦',name:'Fritz!Box 7590 (DSL-Router)',tip:'Router + Switch + Modem + WLAN-AP in einem Gerät'},{icon:'🚀',name:'Vodafone Station / Telekom Speedport',tip:'Typische ISP-Router für Heimanschlüsse'},{icon:'🏢',name:'Cisco ISR / Juniper (Unternehmens-WAN)',tip:'Verbindet Unternehmensfilialen über WAN-Links'}]},
+   cmpRow:['L1–L3','Pakete (IP)','Routing-Tabelle (IP-gezielt)','N (je Interface)','N (je Interface)','Hoch (OSPF/BGP)'],
+  },
+  {id:'gateway',name:'Gateway',osi:'Schicht 1–7',layers:[1,2,3,4,5,6,7],icon:'GW',il:7,ms:'1.4',so:'1.0',hub:false,net2:true,unit:'appdata',
+   note:'Vollständige Protokollübersetzung auf allen 7 OSI-Schichten',
+   desc:'Arbeitet auf allen Schichten. Ermöglicht Kommunikation zwischen Netzen mit völlig unterschiedlichen Protokollarchitekturen.',
+   rows:[['Dateneinheit','Anwendungsdaten'],['Weiterleitung','Vollständige Protokollübersetzung'],['Intelligenz','Sehr hoch — Protokollumsetzung auf Anwendungsebene'],['Besonderheit','Je Dienst / Protokoll ein dediziertes Gateway']],
+   coll:{n:'N',label:'N (vollständig getrennt)',desc:'Da das Gateway alle Schichten verarbeitet, sind alle Kollisionsdomänen vollständig voneinander isoliert.'},
+   bcast:{n:'N',label:'N (vollständig getrennt)',desc:'Broadcasts werden nicht weitergeleitet — das Gateway übersetzt Protokolle und ist eine vollständige Grenze zwischen den Netzen.'},
+   diagram:'gateway',
+   alltag:{emoji:'🔄',desc:'Protokollübersetzer — immer dann nötig, wenn grundlegend verschiedene Systeme kommunizieren.',examples:[{icon:'📧',name:'E-Mail-Gateway (SMTP → X.400)',tip:'Übersetzt zwischen verschiedenen E-Mail-Protokollen'},{icon:'📞',name:'VoIP-Gateway',tip:'Wandelt analoge Telefonie in IP-Telefonie um (z. B. Fritz!Box mit analogem Anschluss)'},{icon:'🔒',name:'Application Firewall / Proxy',tip:'Inspiziert Traffic auf Anwendungsebene — z. B. Palo Alto, Squid'}]},
+   cmpRow:['L1–L7','Anwendungsdaten','Protokollübersetzung (L1–L7)','N (vollständig getrennt)','N (vollständig getrennt)','Sehr hoch (Protokollumsetzung)'],
+  },
+];
+
+/* ═══ SHAPES ═══ */
+const SHAPES={
+  bits:{w:'16px',h:'16px',r:'50%',html:''},
+  frame:{w:'44px',h:'20px',r:'3px',
+    html:'<div style="height:7px;background:rgba(0,0,0,0.25);border-radius:2px 2px 0 0"></div><div style="font-size:8px;color:rgba(255,255,255,0.92);text-align:center;font-weight:700;font-family:monospace;margin-top:2px">Frame</div>'},
+  packet:{w:'50px',h:'22px',r:'3px',
+    html:'<div style="height:8px;background:rgba(0,0,0,0.2);border-radius:2px 2px 0 0;display:flex;align-items:center;padding:0 4px"><span style="font-size:8px;color:#fff;font-weight:700;font-family:monospace">IP</span></div><div style="font-size:8px;color:rgba(255,255,255,0.9);text-align:center;font-weight:700;font-family:monospace;margin-top:1px">Paket</div>'},
+  appdata:{w:'54px',h:'24px',r:'3px',
+    html:'<div style="display:flex;height:9px;border-radius:2px 2px 0 0;overflow:hidden"><div style="flex:1;background:rgba(255,255,255,0.38)"></div><div style="flex:2;background:rgba(0,0,0,0.18)"></div><div style="flex:1;background:rgba(255,255,255,0.38)"></div></div><div style="font-size:7px;color:rgba(255,255,255,0.9);text-align:center;font-weight:700;font-family:monospace;margin-top:2px">App-Daten</div>'},
+};
+
+/* ═══ VIEW SWITCH ═══ */
+function showView(id,btn){
+  document.querySelectorAll('.view').forEach(v=>v.classList.remove('show'));
+  document.querySelectorAll('.vbtn').forEach(b=>b.classList.remove('act'));
+  document.getElementById(id).classList.add('show');
+  btn.classList.add('act');
+}
+
+/* ═══ VIEW 1 ═══ */
+function setSignalShape(el,unit,color){
+  const s=SHAPES[unit]||SHAPES.bits;
+  el.style.width=s.w;el.style.height=s.h;el.style.borderRadius=s.r;
+  el.style.background=color;el.style.overflow='hidden';
+  el.style.setProperty('--sw',s.w);el.innerHTML=s.html;
+}
+function highlightLegend(unit){
+  ['bits','frame','packet','app'].forEach(k=>{
+    const match=(k==='app'?unit==='appdata':unit===k);
+    const el=document.getElementById('leg-'+k);
+    if(el) el.style.opacity=match?'1':'0.32';
+  });
+}
+function toggleInfo(){
+  const wrap=document.getElementById('info-wrap'),btn=document.getElementById('info-btn');
+  const open=wrap.classList.toggle('open');
+  btn.classList.toggle('open',open);
+  document.getElementById('btn-label').textContent=open?'Erklärung ausblenden':'Erklärung einblenden';
+}
+function buildStack(cid,right){
+  const c=document.getElementById(cid);c.innerHTML='';
+  OSI.forEach(l=>{
+    const d=document.createElement('div');d.className='lrow'+(right?' r':'');d.dataset.id=l.id;
+    d.innerHTML=`<div class="lnum">${l.id}</div><span class="lname">${l.name}</span>`;
+    c.appendChild(d);
+  });
+}
+function buildInds(){
+  const c=document.getElementById('linds');c.innerHTML='';
+  for(let i=1;i<=7;i++){const el=document.createElement('div');el.className='lind';el.dataset.id=i;el.textContent='L'+i;c.appendChild(el);}
+}
+function buildTabs(){
+  const c=document.getElementById('tabs');
+  DEV.forEach(d=>{
+    const b=document.createElement('button');b.className='tab';b.dataset.id=d.id;
+    b.onclick=()=>sel(d.id);
+    b.innerHTML=d.name+'&nbsp;<span style="font-size:15px;opacity:.6">'+d.osi+'</span>';
+    c.appendChild(b);
+  });
+}
+function resetAnim(el){el.style.animation='none';void el.offsetWidth;el.style.animation='';}
+function sel(id){
+  const d=DEV.find(x=>x.id===id);
+  const lvar=`var(--lc${d.il})`,lfvar=`var(--lf${d.il})`,ltvar=`var(--lt${d.il})`;
+  document.querySelectorAll('.tab').forEach(t=>t.classList.toggle('sel',t.dataset.id===id));
+  ['osi-a','osi-b'].forEach(cid=>{
+    const right=cid==='osi-b';
+    document.getElementById(cid).querySelectorAll('.lrow').forEach(r=>{
+      const lid=parseInt(r.dataset.id),a=d.layers.includes(lid);
+      r.className='lrow'+(right?' r':'')+(a?' a'+lid:'');
+    });
+  });
+  document.getElementById('stbl').textContent=d.net2?'Station B · Netz 2':'Station B';
+  document.getElementById('linds').querySelectorAll('.lind').forEach(el=>{
+    const lid=parseInt(el.dataset.id);
+    el.className='lind'+(d.layers.includes(lid)?' a'+lid:'');
+  });
+  const s0=document.getElementById('s0'),s1=document.getElementById('s1'),s2=document.getElementById('s2');
+  s0.style.setProperty('--ms',d.ms);s0.style.setProperty('--so',d.so);
+  setSignalShape(s0,d.unit,lvar);
+  s1.style.display=d.hub?'block':'none';s2.style.display=d.hub?'block':'none';
+  if(d.hub){s1.style.background=lvar;s2.style.background=lvar;}
+  highlightLegend(d.unit);
+  [s0,s1,s2].forEach(resetAnim);
+  const icon=document.getElementById('dicon');
+  icon.style.background=lfvar;icon.style.color=ltvar;icon.textContent=d.icon;
+  document.getElementById('dname').textContent=d.name;
+  document.getElementById('dosi').textContent=d.osi;
+  document.getElementById('anote').textContent=d.note;
+  document.getElementById('iacc').style.background=lvar;
+  document.getElementById('ititle').textContent=d.name;
+  const badge=document.getElementById('ibadge');
+  badge.textContent=d.osi;badge.style.background=lfvar;badge.style.color=ltvar;
+  document.getElementById('idesc').textContent=d.desc;
+  document.getElementById('irows').innerHTML=d.rows.map(([l,v])=>
+    `<div style="background:var(--color-background-secondary);border:1px solid var(--color-border-tertiary);border-radius:var(--border-radius-md);padding:14px 16px">
+       <div style="font-size:14px;text-transform:uppercase;letter-spacing:.08em;color:var(--color-text-tertiary);margin-bottom:5px;font-family:var(--font-mono)">${l}</div>
+       <div style="font-size:18px;color:var(--color-text-primary);line-height:1.4">${v}</div>
+     </div>`).join('');
+}
+
+/* ═══ VIEW 2 — Domain diagrams ═══ */
+const DOM_DIAGRAMS={
+  repeater:`
+    <div style="display:flex;flex-direction:column;gap:12px">
+      <div class="dom-zone bcast" style="display:flex;flex-direction:column;gap:8px">
+        <div style="font-size:13px;font-weight:700;color:var(--col-bcast);font-family:var(--font-mono)">📢 Broadcast-Domäne 1</div>
+        <div class="dom-zone coll" style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+          <div style="font-size:12px;font-weight:700;color:var(--col-coll);font-family:var(--font-mono)">💥 Kollisionsdomäne 1</div>
+          <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+            ${pcNode('PC A')}${wire()}${node('REP','#854F0B')}${wire()}${pcNode('PC B')}
+          </div>
+        </div>
+        <div style="font-size:14px;color:var(--color-text-secondary);padding:0 4px">↑ Repeater verlängert Segment — eine gemeinsame Kollisions- und Broadcast-Domäne</div>
+      </div>
+    </div>`,
+  hub:`
+    <div style="display:flex;flex-direction:column;gap:12px">
+      <div class="dom-zone bcast" style="display:flex;flex-direction:column;gap:8px">
+        <div style="font-size:13px;font-weight:700;color:var(--col-bcast);font-family:var(--font-mono)">📢 Broadcast-Domäne 1</div>
+        <div class="dom-zone coll">
+          <div style="font-size:12px;font-weight:700;color:var(--col-coll);font-family:var(--font-mono);margin-bottom:8px">💥 Kollisionsdomäne 1 (alle Ports gemeinsam)</div>
+          <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+            ${pcNode('PC A')}${wire()}${pcNode('PC B')}${wire()}${node('HUB','#854F0B')}${wire()}${pcNode('PC C')}${wire()}${pcNode('PC D')}
+          </div>
+        </div>
+        <div style="font-size:14px;color:var(--color-text-secondary);padding:0 4px">↑ Alle Geräte teilen eine Kollisionsdomäne — sendet einer, müssen alle warten (CSMA/CD)</div>
+      </div>
+    </div>`,
+  bridge:`
+    <div style="display:flex;flex-direction:column;gap:12px">
+      <div class="dom-zone bcast" style="display:flex;flex-direction:column;gap:8px">
+        <div style="font-size:13px;font-weight:700;color:var(--col-bcast);font-family:var(--font-mono)">📢 Broadcast-Domäne 1 (beide Segmente)</div>
+        <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+          <div class="dom-zone coll" style="display:flex;flex-direction:column;gap:6px">
+            <div style="font-size:12px;font-weight:700;color:var(--col-coll);font-family:var(--font-mono)">💥 Kollision 1</div>
+            <div style="display:flex;align-items:center;gap:6px">${pcNode('PC A')}${wire()}${pcNode('PC B')}</div>
+          </div>
+          <div style="font-size:28px">↔</div>
+          ${node('BRI','#3B6D11')}
+          <div style="font-size:28px">↔</div>
+          <div class="dom-zone coll" style="display:flex;flex-direction:column;gap:6px">
+            <div style="font-size:12px;font-weight:700;color:var(--col-coll);font-family:var(--font-mono)">💥 Kollision 2</div>
+            <div style="display:flex;align-items:center;gap:6px">${pcNode('PC C')}${wire()}${pcNode('PC D')}</div>
+          </div>
+        </div>
+        <div style="font-size:14px;color:var(--color-text-secondary);padding:0 4px">↑ Bridge trennt Kollisionsdomänen — Broadcasts überqueren sie dennoch</div>
+      </div>
+    </div>`,
+  switch:`
+    <div style="display:flex;flex-direction:column;gap:12px">
+      <div class="dom-zone bcast" style="display:flex;flex-direction:column;gap:8px">
+        <div style="font-size:13px;font-weight:700;color:var(--col-bcast);font-family:var(--font-mono)">📢 Broadcast-Domäne 1</div>
+        <div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap">
+          <div class="dom-zone coll" style="padding:6px 10px"><div style="font-size:11px;font-weight:700;color:var(--col-coll);font-family:var(--font-mono);margin-bottom:4px">💥 P1</div>${pcNode('PC A')}</div>
+          ${node('SW','#3B6D11')}
+          <div class="dom-zone coll" style="padding:6px 10px"><div style="font-size:11px;font-weight:700;color:var(--col-coll);font-family:var(--font-mono);margin-bottom:4px">💥 P2</div>${pcNode('PC B')}</div>
+          <div class="dom-zone coll" style="padding:6px 10px"><div style="font-size:11px;font-weight:700;color:var(--col-coll);font-family:var(--font-mono);margin-bottom:4px">💥 P3</div>${pcNode('PC C')}</div>
+          <div class="dom-zone coll" style="padding:6px 10px"><div style="font-size:11px;font-weight:700;color:var(--col-coll);font-family:var(--font-mono);margin-bottom:4px">💥 P4</div>${pcNode('PC D')}</div>
+        </div>
+        <div style="font-size:14px;color:var(--color-text-secondary);padding:0 4px">↑ Jeder Port = eigene Kollisionsdomäne — im Vollduplex sogar kollisionsfrei</div>
+      </div>
+    </div>`,
+  router:`
+    <div style="display:flex;align-items:flex-start;gap:10px;flex-wrap:wrap">
+      <div class="dom-zone bcast" style="display:flex;flex-direction:column;gap:6px">
+        <div style="font-size:13px;font-weight:700;color:var(--col-bcast);font-family:var(--font-mono)">📢 Broadcast-Dom. 1</div>
+        <div class="dom-zone coll" style="display:flex;flex-direction:column;gap:5px">
+          <div style="font-size:11px;font-weight:700;color:var(--col-coll);font-family:var(--font-mono)">💥 Kollision 1</div>
+          <div style="display:flex;gap:5px">${pcNode('PC A')}${pcNode('PC B')}</div>
+        </div>
+        <div style="font-size:13px;color:var(--color-text-secondary)">Netz 1 (z. B. 192.168.1.0/24)</div>
+      </div>
+      <div style="display:flex;align-items:center;font-size:28px;padding-top:36px">↔</div>
+      ${node('RO','#0F6E56')}
+      <div style="display:flex;align-items:center;font-size:28px;padding-top:36px">↔</div>
+      <div class="dom-zone bcast" style="display:flex;flex-direction:column;gap:6px">
+        <div style="font-size:13px;font-weight:700;color:var(--col-bcast);font-family:var(--font-mono)">📢 Broadcast-Dom. 2</div>
+        <div class="dom-zone coll" style="display:flex;flex-direction:column;gap:5px">
+          <div style="font-size:11px;font-weight:700;color:var(--col-coll);font-family:var(--font-mono)">💥 Kollision 2</div>
+          <div style="display:flex;gap:5px">${pcNode('PC C')}${pcNode('PC D')}</div>
+        </div>
+        <div style="font-size:13px;color:var(--color-text-secondary)">Netz 2 (z. B. 10.0.0.0/24)</div>
+      </div>
+    </div>`,
+  gateway:`
+    <div style="display:flex;align-items:flex-start;gap:10px;flex-wrap:wrap">
+      <div class="dom-zone bcast" style="display:flex;flex-direction:column;gap:6px">
+        <div style="font-size:13px;font-weight:700;color:var(--col-bcast);font-family:var(--font-mono)">📢 Broadcast-Dom. 1</div>
+        <div class="dom-zone coll" style="display:flex;flex-direction:column;gap:5px">
+          <div style="font-size:11px;font-weight:700;color:var(--col-coll);font-family:var(--font-mono)">💥 Kollision A</div>
+          <div style="display:flex;gap:5px">${pcNode('Netz A')}</div>
+        </div>
+        <div style="font-size:12px;color:var(--color-text-secondary)">Protokoll X</div>
+      </div>
+      <div style="display:flex;align-items:center;font-size:28px;padding-top:36px">⇄</div>
+      ${node('GW','#534AB7')}
+      <div style="display:flex;align-items:center;font-size:28px;padding-top:36px">⇄</div>
+      <div class="dom-zone bcast" style="display:flex;flex-direction:column;gap:6px">
+        <div style="font-size:13px;font-weight:700;color:var(--col-bcast);font-family:var(--font-mono)">📢 Broadcast-Dom. 2</div>
+        <div class="dom-zone coll" style="display:flex;flex-direction:column;gap:5px">
+          <div style="font-size:11px;font-weight:700;color:var(--col-coll);font-family:var(--font-mono)">💥 Kollision B</div>
+          <div style="display:flex;gap:5px">${pcNode('Netz B')}</div>
+        </div>
+        <div style="font-size:12px;color:var(--color-text-secondary)">Protokoll Y</div>
+      </div>
+    </div>`,
+};
+
+function pcNode(label){
+  return `<div class="domain-pc"><span style="font-size:18px">🖥</span><span>${label}</span></div>`;
+}
+function wire(){return `<div style="width:24px;height:2px;background:var(--color-border-primary);border-radius:1px"></div>`;}
+function node(label,color){
+  return `<div class="domain-node" style="background:${color};color:#fff;border-color:${color};font-size:16px">${label}</div>`;
+}
+
+function buildDomTabs(){
+  const c=document.getElementById('dom-tabs');
+  DEV.forEach(d=>{
+    const b=document.createElement('button');b.className='tab';b.dataset.id=d.id;
+    b.onclick=()=>selDom(d.id);
+    b.innerHTML=d.name+'&nbsp;<span style="font-size:15px;opacity:.6">'+d.osi+'</span>';
+    c.appendChild(b);
+  });
+}
+function selDom(id){
+  const d=DEV.find(x=>x.id===id);
+  document.querySelectorAll('#dom-tabs .tab').forEach(t=>t.classList.toggle('sel',t.dataset.id===id));
+  document.getElementById('dom-diagram').innerHTML=DOM_DIAGRAMS[d.diagram]||'';
+  document.getElementById('dom-coll-count').textContent=d.coll.n;
+  document.getElementById('dom-coll-desc').textContent=d.coll.desc;
+  document.getElementById('dom-bcast-count').textContent=d.bcast.n;
+  document.getElementById('dom-bcast-desc').textContent=d.bcast.desc;
+}
+
+/* ═══ VIEW 3 — Alltag ═══ */
+function buildAlltag(){
+  const c=document.getElementById('alltag-grid');
+  DEV.forEach(d=>{
+    const card=document.createElement('div');card.className='alltag-card';
+    const colVar=`var(--lc${d.il})`,colBg=`var(--lf${d.il})`;
+    card.innerHTML=`
+      <div style="display:flex;align-items:center;gap:12px;margin-bottom:10px">
+        <div style="width:52px;height:52px;border-radius:10px;background:${colBg};display:flex;align-items:center;justify-content:center;font-size:26px;flex-shrink:0">${d.alltag.emoji}</div>
+        <div>
+          <div style="font-size:22px;font-weight:600;color:var(--color-text-primary)">${d.name}</div>
+          <div style="font-size:15px;color:${colVar};font-family:var(--font-mono);font-weight:600">${d.osi}</div>
+        </div>
+      </div>
+      <div style="font-size:15px;color:var(--color-text-secondary);margin-bottom:10px;line-height:1.5">${d.alltag.desc}</div>
+      ${d.alltag.examples.map(e=>`
+        <div class="alltag-example">
+          <span style="font-size:24px">${e.icon}</span>
+          <div>
+            <div style="font-size:16px;font-weight:600;color:var(--color-text-primary)">${e.name}</div>
+            <div style="font-size:14px;color:var(--color-text-secondary);margin-top:2px">${e.tip}</div>
+          </div>
+        </div>`).join('')}`;
+    c.appendChild(card);
+  });
+}
+
+/* ═══ VIEW 4 — Comparison ═══ */
+function buildComparison(){
+  const tb=document.getElementById('cmp-tbody');
+  DEV.forEach(d=>{
+    const lc=`var(--lc${d.il})`,lf=`var(--lf${d.il})`;
+    const [osi,unit,fwd,coll,bcast,intel]=d.cmpRow;
+    const tr=document.createElement('tr');
+    tr.innerHTML=`
+      <td>
+        <div style="display:flex;align-items:center;gap:10px">
+          <div style="width:40px;height:40px;border-radius:8px;background:${lf};display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;font-family:var(--font-mono);color:${lc};flex-shrink:0">${d.icon}</div>
+          <div>
+            <div style="font-size:18px;font-weight:600;color:var(--color-text-primary)">${d.name}</div>
+            <div style="font-size:13px;color:var(--color-text-tertiary);font-family:var(--font-mono)">${d.alltag.emoji} ${d.alltag.examples[0].name}</div>
+          </div>
+        </div>
+      </td>
+      <td><span class="cmp-badge" style="background:${lf};color:${lc}">${osi}</span></td>
+      <td style="font-size:16px;color:var(--color-text-primary)">${unit}</td>
+      <td style="font-size:15px;color:var(--color-text-secondary)">${fwd}</td>
+      <td><span style="background:var(--col-coll-bg);color:var(--col-coll);padding:3px 9px;border-radius:5px;font-size:15px;font-weight:600;font-family:var(--font-mono)">${coll}</span></td>
+      <td><span style="background:var(--col-bcast-bg);color:var(--col-bcast);padding:3px 9px;border-radius:5px;font-size:15px;font-weight:600;font-family:var(--font-mono)">${bcast}</span></td>
+      <td style="font-size:15px;color:var(--color-text-secondary)">${intel}</td>`;
+    tb.appendChild(tr);
+  });
+}
+
+/* ═══ INIT ═══ */
+buildStack('osi-a',false);buildStack('osi-b',true);buildInds();buildTabs();sel('repeater');
+buildDomTabs();selDom('repeater');
+buildAlltag();
+buildComparison();
+</script>
+</body>
+</html>

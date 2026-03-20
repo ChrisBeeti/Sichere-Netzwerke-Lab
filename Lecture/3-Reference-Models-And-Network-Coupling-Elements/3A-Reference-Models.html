@@ -1,0 +1,651 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>ISO/OSI & TCP/IP Referenzmodell — FOM SS 2026</title>
+<style>
+/* ══ IDENTICAL TOKEN SYSTEM AS NETZKOPPELELEMENTE ══ */
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --lc1:#854F0B;--lf1:#FAEEDA;--lt1:#633806;
+  --lc2:#3B6D11;--lf2:#EAF3DE;--lt2:#27500A;
+  --lc3:#0F6E56;--lf3:#E1F5EE;--lt3:#085041;
+  --lc4:#185FA5;--lf4:#E6F1FB;--lt4:#0C447C;
+  --lc5:#185FA5;--lf5:#E6F1FB;--lt5:#0C447C;
+  --lc6:#534AB7;--lf6:#EEEDFE;--lt6:#3C3489;
+  --lc7:#534AB7;--lf7:#EEEDFE;--lt7:#3C3489;
+  --color-background-primary:#ffffff;
+  --color-background-secondary:#f5f5f5;
+  --color-text-primary:#111;
+  --color-text-secondary:#555;
+  --color-text-tertiary:#888;
+  --color-border-primary:#bbb;
+  --color-border-secondary:#ddd;
+  --color-border-tertiary:#eee;
+  --border-radius-md:8px;
+  --border-radius-lg:12px;
+  --font-sans:system-ui,-apple-system,sans-serif;
+  --font-mono:'SF Mono',Consolas,monospace;
+}
+@media(prefers-color-scheme:dark){:root{
+  --lc1:#EF9F27;--lf1:#3d2200;--lt1:#FAEEDA;
+  --lc2:#97C459;--lf2:#1a3300;--lt2:#EAF3DE;
+  --lc3:#5DCAA5;--lf3:#003326;--lt3:#E1F5EE;
+  --lc4:#85B7EB;--lf4:#002966;--lt4:#E6F1FB;
+  --lc5:#85B7EB;--lf5:#002966;--lt5:#E6F1FB;
+  --lc6:#AFA9EC;--lf6:#1e1966;--lt6:#EEEDFE;
+  --lc7:#AFA9EC;--lf7:#1e1966;--lt7:#EEEDFE;
+  --color-background-primary:#1a1a1a;
+  --color-background-secondary:#242424;
+  --color-text-primary:#f0f0f0;
+  --color-text-secondary:#aaa;
+  --color-text-tertiary:#666;
+  --color-border-primary:#444;
+  --color-border-secondary:#333;
+  --color-border-tertiary:#2a2a2a;
+}}
+
+body{font-family:var(--font-sans);background:var(--color-background-primary);color:var(--color-text-primary);padding:1.5rem 1rem 3rem}
+
+/* ══ HEADER ══ */
+.page-header{text-align:center;margin-bottom:1.75rem}
+.page-kicker{font-size:14px;letter-spacing:.1em;text-transform:uppercase;color:var(--color-text-tertiary);margin-bottom:5px;font-family:var(--font-mono)}
+.page-title{font-size:34px;font-weight:600;color:var(--color-text-primary)}
+.page-sub{font-size:17px;color:var(--color-text-secondary);margin-top:4px}
+
+/* ══ VIEW NAV — same as .vnav in Netzkoppelelemente ══ */
+.vnav{display:flex;gap:6px;flex-wrap:wrap;justify-content:center;margin-bottom:1.5rem}
+.vbtn{cursor:pointer;padding:9px 20px;border-radius:var(--border-radius-md);border:1px solid var(--color-border-secondary);background:transparent;color:var(--color-text-secondary);font-size:17px;font-family:var(--font-sans);transition:all .15s;line-height:1.4}
+.vbtn:hover{background:var(--color-background-secondary);color:var(--color-text-primary)}
+.vbtn.act{background:var(--color-background-secondary);border-color:var(--color-border-primary);color:var(--color-text-primary);font-weight:600}
+.view{display:none}.view.show{display:block}
+
+/* ══ OSI LAYER ROW — identical to .lrow in Netzkoppelelemente ══ */
+.lrow{display:flex;align-items:center;gap:7px;padding:8px 12px;border-radius:5px;border:0.5px solid var(--color-border-tertiary);background:var(--color-background-primary);transition:background .25s,border-color .25s;cursor:pointer;user-select:none}
+.lrow.r{flex-direction:row-reverse}.lrow.r .lname{text-align:right;flex:1}
+.lnum{width:30px;height:30px;border-radius:4px;display:flex;align-items:center;justify-content:center;font-size:15px;font-weight:700;font-family:var(--font-mono);flex-shrink:0;background:var(--color-background-secondary);color:var(--color-text-tertiary);transition:all .25s}
+.lname{font-size:17px;font-weight:500;color:var(--color-text-secondary);transition:color .25s;flex:1}
+.lpdu{font-family:var(--font-mono);font-size:12px;color:var(--color-text-tertiary);white-space:nowrap}
+/* active states – same formula */
+.lrow.a1{background:var(--lf1);border-color:var(--lc1)}.lrow.a1 .lnum{background:var(--lc1);color:#fff}.lrow.a1 .lname{color:var(--lc1)}
+.lrow.a2{background:var(--lf2);border-color:var(--lc2)}.lrow.a2 .lnum{background:var(--lc2);color:#fff}.lrow.a2 .lname{color:var(--lc2)}
+.lrow.a3{background:var(--lf3);border-color:var(--lc3)}.lrow.a3 .lnum{background:var(--lc3);color:#fff}.lrow.a3 .lname{color:var(--lc3)}
+.lrow.a4{background:var(--lf4);border-color:var(--lc4)}.lrow.a4 .lnum{background:var(--lc4);color:#fff}.lrow.a4 .lname{color:var(--lc4)}
+.lrow.a5{background:var(--lf5);border-color:var(--lc5)}.lrow.a5 .lnum{background:var(--lc5);color:#fff}.lrow.a5 .lname{color:var(--lc5)}
+.lrow.a6{background:var(--lf6);border-color:var(--lc6)}.lrow.a6 .lnum{background:var(--lc6);color:#fff}.lrow.a6 .lname{color:var(--lc6)}
+.lrow.a7{background:var(--lf7);border-color:var(--lc7)}.lrow.a7 .lnum{background:var(--lc7);color:#fff}.lrow.a7 .lname{color:var(--lc7)}
+.lrow.dim{opacity:.28;filter:saturate(.2)}
+
+/* ══ PANEL / CARD — same as boxes in Netzkoppelelemente ══ */
+.panel{background:var(--color-background-secondary);border:0.5px solid var(--color-border-tertiary);border-radius:var(--border-radius-lg);padding:1.25rem}
+.panel-white{background:var(--color-background-primary);border:0.5px solid var(--color-border-tertiary);border-radius:var(--border-radius-lg);padding:1.25rem}
+.sec-label{font-size:12px;letter-spacing:.1em;text-transform:uppercase;color:var(--color-text-tertiary);font-family:var(--font-mono);margin-bottom:10px}
+.stack{display:flex;flex-direction:column;gap:5px}
+
+/* ══ PROTOCOL PILL — same as proto-pill in old file ══ */
+.ppill{display:inline-block;padding:3px 9px;border-radius:5px;font-family:var(--font-mono);font-size:13px;font-weight:600;margin:2px 3px 2px 0;border:0.5px solid transparent}
+
+/* ══ DETAIL CARD — right panel in View 1 ══ */
+.detail-card{background:var(--color-background-primary);border:0.5px solid var(--color-border-secondary);border-radius:var(--border-radius-lg);padding:1.5rem;position:sticky;top:1rem}
+.detail-icon{width:50px;height:50px;border-radius:var(--border-radius-md);display:flex;align-items:center;justify-content:center;font-family:var(--font-mono);font-size:18px;font-weight:700;flex-shrink:0}
+.krow{display:flex;gap:10px;margin-bottom:10px;align-items:flex-start}
+.kk{font-family:var(--font-mono);font-size:12px;color:var(--color-text-tertiary);text-transform:uppercase;letter-spacing:.06em;min-width:76px;flex-shrink:0;padding-top:2px}
+.kv{font-size:15px;color:var(--color-text-primary);line-height:1.5}
+.abox{border-radius:var(--border-radius-md);padding:12px 14px;font-size:15px;line-height:1.6;border:0.5px solid;margin-top:10px;color:var(--color-text-secondary)}
+
+/* ══ INFO IDLE ══ */
+.info-idle{text-align:center;color:var(--color-text-tertiary);padding:3rem 1rem}
+.info-idle-icon{font-size:42px;margin-bottom:10px}
+.info-idle-txt{font-size:17px}
+
+/* ══ VIEW 2 – Aristokratisches Prinzip ══ */
+.sap-gap{height:16px;display:flex;align-items:center;justify-content:center;position:relative;margin:0 6px}
+.sap-line{position:absolute;left:0;right:0;top:50%;height:1px;background:var(--color-border-secondary)}
+.sap-tag{position:absolute;background:var(--color-background-primary);border:0.5px solid var(--color-border-secondary);border-radius:3px;font-family:var(--font-mono);font-size:11px;color:var(--color-text-tertiary);padding:1px 6px;z-index:1}
+.arr{position:absolute;right:6px;font-size:20px;opacity:0;transition:opacity .3s;pointer-events:none;font-weight:700}
+
+.flow-col{flex:1}
+.flow-head{font-family:var(--font-mono);font-size:12px;letter-spacing:.08em;text-transform:uppercase;margin-bottom:8px;color:var(--color-text-tertiary);text-align:center}
+.frow{display:flex;align-items:flex-start;gap:8px;padding:9px 12px;border-radius:var(--border-radius-md);border:0.5px solid transparent;margin-bottom:5px;
+  opacity:0;transform:translateX(-10px);transition:opacity .32s,transform .32s,background .2s}
+.frow.vis{opacity:1;transform:translateX(0)}
+.frow-n{font-size:13px;font-weight:700;font-family:var(--font-mono);flex-shrink:0;padding-top:1px}
+.frow-name{font-size:15px;font-weight:500}
+.frow-sub{font-size:12px;color:var(--color-text-tertiary);margin-top:2px}
+
+/* ══ VIEW 3 – Encapsulation ══ */
+.ctrl-row{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:1.25rem}
+.cbtn{cursor:pointer;padding:9px 22px;border-radius:var(--border-radius-md);border:1px solid var(--color-border-secondary);background:var(--color-background-primary);color:var(--color-text-secondary);font-size:16px;font-family:var(--font-sans);transition:all .15s;font-weight:500}
+.cbtn:hover{background:var(--color-background-secondary);color:var(--color-text-primary)}
+.cbtn.go{background:var(--lc3);color:#fff;border-color:var(--lc3);font-weight:700}
+.cbtn.go:hover{opacity:.88}
+.step-txt{font-family:var(--font-mono);font-size:14px;color:var(--color-text-tertiary)}
+
+.enc-grid{display:grid;grid-template-columns:1fr 110px 1fr;gap:0;min-width:640px}
+.sys-col{background:var(--color-background-secondary);border:0.5px solid var(--color-border-tertiary);border-radius:var(--border-radius-lg);padding:1rem}
+.sys-title{font-family:var(--font-mono);font-size:12px;color:var(--color-text-tertiary);text-transform:uppercase;letter-spacing:.1em;text-align:center;margin-bottom:10px}
+
+/* enc layer rows – same lrow formula */
+.elrow{display:flex;align-items:center;gap:7px;padding:7px 10px;border-radius:5px;border:0.5px solid var(--color-border-tertiary);background:var(--color-background-primary);margin-bottom:4px;transition:all .3s}
+.elnum{width:26px;height:26px;border-radius:4px;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;font-family:var(--font-mono);flex-shrink:0;background:var(--color-background-secondary);color:var(--color-text-tertiary);transition:all .3s}
+.elname{font-size:14px;font-weight:500;color:var(--color-text-secondary);flex:1;transition:color .3s}
+.epdu{font-family:var(--font-mono);font-size:11px;color:var(--color-text-tertiary);white-space:nowrap;transition:all .3s}
+.elrow.hi1{background:var(--lf1);border-color:var(--lc1)}.elrow.hi1 .elnum{background:var(--lc1);color:#fff}.elrow.hi1 .elname{color:var(--lc1)}
+.elrow.hi2{background:var(--lf2);border-color:var(--lc2)}.elrow.hi2 .elnum{background:var(--lc2);color:#fff}.elrow.hi2 .elname{color:var(--lc2)}
+.elrow.hi3{background:var(--lf3);border-color:var(--lc3)}.elrow.hi3 .elnum{background:var(--lc3);color:#fff}.elrow.hi3 .elname{color:var(--lc3)}
+.elrow.hi4{background:var(--lf4);border-color:var(--lc4)}.elrow.hi4 .elnum{background:var(--lc4);color:#fff}.elrow.hi4 .elname{color:var(--lc4)}
+.elrow.hi5{background:var(--lf5);border-color:var(--lc5)}.elrow.hi5 .elnum{background:var(--lc5);color:#fff}.elrow.hi5 .elname{color:var(--lc5)}
+.elrow.hi6{background:var(--lf6);border-color:var(--lc6)}.elrow.hi6 .elnum{background:var(--lc6);color:#fff}.elrow.hi6 .elname{color:var(--lc6)}
+.elrow.hi7{background:var(--lf7);border-color:var(--lc7)}.elrow.hi7 .elnum{background:var(--lc7);color:#fff}.elrow.hi7 .elname{color:var(--lc7)}
+
+/* medium / wire */
+.medium-col{display:flex;flex-direction:column;align-items:center;justify-content:flex-end;gap:6px;padding:0 8px 12px}
+.medium-lbl{font-family:var(--font-mono);font-size:11px;color:var(--color-text-tertiary);text-transform:uppercase;letter-spacing:.08em;text-align:center}
+.wire-box{width:100%;height:44px;background:var(--color-background-primary);border:0.5px solid var(--color-border-tertiary);border-radius:5px;position:relative;overflow:hidden}
+.wire-line{position:absolute;top:50%;left:0;right:0;height:1px;background:var(--color-border-secondary);transform:translateY(-50%)}
+.pkt{position:absolute;top:50%;transform:translate(-50%,-50%);height:20px;border-radius:4px;display:flex;align-items:center;justify-content:center;font-family:var(--font-mono);font-size:9px;font-weight:700;color:#fff;white-space:nowrap;padding:0 7px;transition:left .55s ease,opacity .3s;pointer-events:none}
+
+/* PDU stack */
+.pdu-stack{margin-top:8px;min-height:24px;display:flex;flex-direction:column;gap:2px}
+.pdu-row{display:flex;align-items:stretch;height:22px;border-radius:3px;overflow:hidden;opacity:0;transform:scaleY(.5);transform-origin:top;transition:opacity .25s,transform .25s}
+.pdu-row.show{opacity:1;transform:scaleY(1)}
+.pdu-hdr{display:flex;align-items:center;justify-content:center;font-family:var(--font-mono);font-size:9px;font-weight:700;padding:0 6px;flex-shrink:0;white-space:nowrap;color:#fff}
+.pdu-data{display:flex;align-items:center;padding-left:7px;font-size:11px;color:rgba(0,0,0,.35);flex:1;overflow:hidden;white-space:nowrap}
+@media(prefers-color-scheme:dark){.pdu-data{color:rgba(255,255,255,.35)}}
+
+/* progress bar */
+.pbar{height:3px;background:var(--color-border-secondary);border-radius:2px;margin-top:1rem;overflow:hidden}
+.pfill{height:100%;border-radius:2px;background:var(--lc3);width:0%;transition:width .45s ease}
+
+/* ══ VIEW 4 – OSI vs TCP/IP ══ */
+.cmp-grid{display:grid;grid-template-columns:1fr 72px 1fr;gap:0;align-items:start}
+.model-col{background:var(--color-background-secondary);border:0.5px solid var(--color-border-tertiary);border-radius:var(--border-radius-lg);padding:1.25rem}
+.model-title{font-size:22px;font-weight:600;text-align:center;margin-bottom:2px}
+.model-sub{font-family:var(--font-mono);font-size:13px;color:var(--color-text-tertiary);text-align:center;margin-bottom:14px}
+/* TCP/IP layer rows */
+.trow{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:10px 14px;border-radius:5px;border:0.5px solid var(--color-border-tertiary);background:var(--color-background-primary);margin-bottom:5px;cursor:pointer;transition:all .2s}
+.trow:hover{border-color:var(--color-border-primary);background:var(--color-background-secondary)}
+.trow.sel{border-color:currentColor}
+.trow-name{font-size:17px;font-weight:600}
+.trow-proto{font-family:var(--font-mono);font-size:12px;color:var(--color-text-tertiary);margin-top:2px}
+.TA{color:var(--lc7)}.TA.sel,.TA:hover{background:var(--lf7);border-color:var(--lc7)}
+.TT{color:var(--lc4)}.TT.sel,.TT:hover{background:var(--lf4);border-color:var(--lc4)}
+.TI{color:var(--lc3)}.TI.sel,.TI:hover{background:var(--lf3);border-color:var(--lc3)}
+.TN{color:var(--lc1)}.TN.sel,.TN:hover{background:var(--lf1);border-color:var(--lc1)}
+.faded{opacity:.22;filter:saturate(.2)}
+/* map column */
+.map-col{position:relative}
+#msvg{width:72px;display:block}
+
+/* footer */
+.footer{text-align:center;margin-top:14px;font-size:14px;color:var(--color-text-tertiary);font-family:var(--font-mono)}
+
+/* animations */
+@keyframes popIn{from{opacity:0;transform:scale(.94)}to{opacity:1;transform:scale(1)}}
+</style>
+</head>
+<body>
+
+<!-- ══ HEADER ══ -->
+<div class="page-header">
+  <div class="page-kicker">Sichere Netzwerke · SS 2026 · FOM Hochschule</div>
+  <div class="page-title">ISO/OSI & TCP/IP Referenzmodell</div>
+  <div class="page-sub">Interaktive Vorlesungshilfe · Christian Böttger M.Sc.</div>
+</div>
+
+<!-- ══ VIEW NAV ══ -->
+<div class="vnav">
+  <button class="vbtn act" onclick="sv('v1',this)">① OSI-Schichten</button>
+  <button class="vbtn"     onclick="sv('v2',this)">② Aristokratisches Prinzip</button>
+  <button class="vbtn"     onclick="sv('v3',this)">③ Encapsulation</button>
+  <button class="vbtn"     onclick="sv('v4',this)">④ OSI vs. TCP/IP</button>
+</div>
+
+<!-- ══════════════════════════════════
+     VIEW 1 — OSI Schichten
+══════════════════════════════════ -->
+<div id="v1" class="view show">
+  <div style="display:grid;grid-template-columns:1fr 360px;gap:18px;align-items:start">
+
+    <div class="panel">
+      <div class="sec-label">ISO/OSI-Referenzmodell · Schicht anklicken für Details</div>
+      <div class="stack" id="s1"></div>
+    </div>
+
+    <div class="detail-card" id="dpanel">
+      <div id="didle" class="info-idle">
+        <div class="info-idle-icon">🔍</div>
+        <div class="info-idle-txt">Schicht auswählen</div>
+      </div>
+      <div id="dbody" style="display:none"></div>
+    </div>
+
+  </div>
+</div>
+
+<!-- ══════════════════════════════════
+     VIEW 2 — Aristokratisches Prinzip
+══════════════════════════════════ -->
+<div id="v2" class="view">
+  <div style="display:grid;grid-template-columns:260px 1fr;gap:18px;align-items:start">
+
+    <div class="panel">
+      <div class="sec-label">Schicht klicken → Delegation sehen</div>
+      <div id="v2s"></div>
+    </div>
+
+    <div class="panel-white">
+      <div style="font-size:20px;font-weight:600;color:var(--color-text-primary);margin-bottom:14px;display:flex;align-items:center;gap:8px" id="a2title">
+        <span>👑</span><span>Aristokratisches Prinzip</span>
+      </div>
+      <div id="a2idle" style="color:var(--color-text-tertiary);font-size:16px;padding:1rem 0">← Schicht auswählen</div>
+      <div id="a2tracks" style="display:none">
+        <div style="display:flex;gap:12px">
+          <div class="flow-col">
+            <div class="flow-head" id="fh-down">↓ Delegation</div>
+            <div id="ft-down"></div>
+          </div>
+          <div class="flow-col">
+            <div class="flow-head" id="fh-up">↑ Rückgabe</div>
+            <div id="ft-up"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- ══════════════════════════════════
+     VIEW 3 — Encapsulation
+══════════════════════════════════ -->
+<div id="v3" class="view">
+  <div class="ctrl-row">
+    <button class="cbtn go" onclick="encGo()">▶ Starten</button>
+    <button class="cbtn"    onclick="encReset()">↺ Reset</button>
+    <span class="step-txt" id="stxt">Bereit</span>
+  </div>
+  <div style="overflow-x:auto">
+    <div class="panel" style="overflow:visible">
+      <div class="enc-grid">
+        <div class="sys-col">
+          <div class="sys-title">System A · Sender</div>
+          <div id="ea"></div>
+          <div class="pdu-stack" id="pdu-a"></div>
+        </div>
+        <div class="medium-col">
+          <div class="medium-lbl">Physikalisches<br>Medium</div>
+          <div class="wire-box">
+            <div class="wire-line"></div>
+            <div class="pkt" id="pkt" style="left:-5%;opacity:0"></div>
+          </div>
+        </div>
+        <div class="sys-col">
+          <div class="sys-title">System B · Empfänger</div>
+          <div id="eb"></div>
+          <div class="pdu-stack" id="pdu-b"></div>
+        </div>
+      </div>
+      <div class="pbar"><div class="pfill" id="pfill"></div></div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════
+     VIEW 4 — OSI vs TCP/IP
+══════════════════════════════════ -->
+<div id="v4" class="view">
+  <div class="cmp-grid">
+    <div class="model-col">
+      <div class="model-title">ISO / OSI</div>
+      <div class="model-sub">7 Schichten · 1984</div>
+      <div class="stack" id="s4"></div>
+    </div>
+    <div class="map-col">
+      <svg id="msvg" viewBox="0 0 72 0" preserveAspectRatio="none"></svg>
+    </div>
+    <div class="model-col">
+      <div class="model-title">TCP / IP</div>
+      <div class="model-sub">4 Schichten · 1983</div>
+      <div id="ts"></div>
+    </div>
+  </div>
+  <div style="display:flex;gap:20px;flex-wrap:wrap;justify-content:center;margin-top:14px;font-size:14px;color:var(--color-text-secondary)">
+    <span>TCP/IP-Schicht anklicken → OSI-Mapping sehen</span>
+  </div>
+</div>
+
+<div class="footer">ISO/OSI · TCP/IP · SS 2026 · Christian Böttger M.Sc.</div>
+
+<script>
+/* ══════════ DATA ══════════ */
+const L=[
+  {n:7,name:'Anwendungsschicht',   en:'Application Layer',   pdu:'Daten / APDU',
+   protos:['HTTP','HTTPS','FTP','SMTP','DNS','Telnet','SNMP'],
+   fun:'Netzwerkdienste direkt für Anwendungen',
+   sap:'Anwendungs-SAP',
+   arist:'Höchste Schicht — delegiert alle Aufgaben nach unten an L6',
+   tcp:'TA'},
+  {n:6,name:'Darstellungsschicht', en:'Presentation Layer',  pdu:'Daten / PPDU',
+   protos:['TLS','SSL','ASCII','JPEG','MPEG','XDR'],
+   fun:'Kodierung, Kompression, Verschlüsselung',
+   sap:'Darstellungs-SAP',
+   arist:'Delegiert Sitzungsaufbau an L5',
+   tcp:'TA'},
+  {n:5,name:'Sitzungsschicht',     en:'Session Layer',       pdu:'Daten / SPDU',
+   protos:['NetBIOS','RPC','SIP','PPTP'],
+   fun:'Sitzungsauf- und abbau, Synchronisation',
+   sap:'Sitzungs-SAP',
+   arist:'Delegiert zuverlässigen Transport an L4',
+   tcp:'TA'},
+  {n:4,name:'Transportschicht',    en:'Transport Layer',     pdu:'Segment / Datagramm',
+   protos:['TCP','UDP','SCTP'],
+   fun:'Ende-zu-Ende-Verbindung, Ports, Flusskontrolle',
+   sap:'Port-Nummer',
+   arist:'Delegiert IP-Routing an L3',
+   tcp:'TT'},
+  {n:3,name:'Vermittlungsschicht', en:'Network Layer',       pdu:'IP-Paket',
+   protos:['IPv4','IPv6','ICMP','OSPF','BGP','ARP'],
+   fun:'Routing, IP-Adressierung, Fragmentierung',
+   sap:'IP-Adresse',
+   arist:'Delegiert Frame-Übertragung im LAN an L2',
+   tcp:'TI'},
+  {n:2,name:'Sicherungsschicht',   en:'Data Link Layer',     pdu:'Frame (Rahmen)',
+   protos:['Ethernet','WLAN 802.11','PPP','STP','VLAN'],
+   fun:'MAC-Adressierung, Framing, CRC-Fehlererkennung',
+   sap:'MAC-Adresse',
+   arist:'Delegiert Signalübertragung an L1',
+   tcp:'TN'},
+  {n:1,name:'Bitübertragungsschicht',en:'Physical Layer',    pdu:'Bits / Signale',
+   protos:['Ethernet PHY','DSL','USB','Bluetooth','RS-232'],
+   fun:'Elektrische/optische Signalübertragung, Kabel',
+   sap:'Physikalischer Port',
+   arist:'Unterste Schicht — führt alle Delegationen aus, überträgt Bits',
+   tcp:'TN'},
+];
+
+/* layer n → css class / color tokens */
+function lc(n){return`var(--lc${n})`}
+function lf(n){return`var(--lf${n})`}
+
+const PROTO_COL={
+  'HTTP':'#0ea5e9','HTTPS':'#0284c7','FTP':'#7c3aed','SMTP':'#a78bfa','DNS':'#10b981',
+  'Telnet':'#f87171','SNMP':'#fb923c','TLS':'#2dd4bf','SSL':'#14b8a6','ASCII':'#94a3b8',
+  'JPEG':'#8b5cf6','MPEG':'#a78bfa','TCP':'#0284c7','UDP':'#0ea5e9','SCTP':'#38bdf8',
+  'IPv4':'#16a34a','IPv6':'#15803d','ICMP':'#86efac','OSPF':'#34d399','BGP':'#059669',
+  'ARP':'#ca8a04','Ethernet':'#ea580c','WLAN 802.11':'#f97316','PPP':'#dc2626',
+  'STP':'#b91c1c','VLAN':'#9a3412','NetBIOS':'#9333ea','RPC':'#7c3aed','SIP':'#6d28d9',
+  'XDR':'#64748b','USB':'#94a3b8','DSL':'#fbbf24',
+};
+
+const TCPIP=[
+  {id:'TA',cls:'TA',name:'Anwendungsschicht', proto:'HTTP, FTP, SMTP, DNS',   osi:[7,6,5]},
+  {id:'TT',cls:'TT',name:'Transportschicht',  proto:'TCP, UDP',               osi:[4]},
+  {id:'TI',cls:'TI',name:'Internetschicht',   proto:'IP, ICMP, ARP, OSPF',   osi:[3]},
+  {id:'TN',cls:'TN',name:'Netzzugangsschicht',proto:'Ethernet, WLAN, DSL',   osi:[2,1]},
+];
+
+/* ══════════ UTILS ══════════ */
+function sv(id,btn){
+  document.querySelectorAll('.view').forEach(v=>v.classList.remove('show'));
+  document.querySelectorAll('.vbtn').forEach(b=>b.classList.remove('act'));
+  document.getElementById(id).classList.add('show');
+  btn.classList.add('act');
+}
+
+function makeRow(l, clickFn){
+  const d=document.createElement('div');
+  d.className='lrow';
+  d.dataset.n=l.n;
+  d.innerHTML=`<div class="lnum">${l.n}</div><div class="lname">${l.name}</div><div class="lpdu">${l.pdu.split(' / ')[0]}</div>`;
+  if(clickFn) d.onclick=()=>clickFn(l);
+  return d;
+}
+
+/* ══════════ VIEW 1 ══════════ */
+function buildV1(){
+  const s=document.getElementById('s1');
+  L.forEach(l=>s.appendChild(makeRow(l,showDetail)));
+}
+
+function showDetail(l){
+  document.querySelectorAll('#s1 .lrow').forEach(r=>{
+    r.className=`lrow${parseInt(r.dataset.n)===l.n?' a'+l.n:''}`;
+  });
+  document.getElementById('didle').style.display='none';
+  const b=document.getElementById('dbody');b.style.display='block';
+  const pills=l.protos.map(p=>{
+    const c=PROTO_COL[p]||lc(l.n).replace('var(','').replace(')','');
+    return `<span class="ppill" style="background:${c}22;color:${c};border-color:${c}55">${p}</span>`;
+  }).join('');
+  b.style.animation='popIn .22s ease';
+  b.innerHTML=`
+    <div style="display:flex;align-items:center;gap:14px;margin-bottom:16px">
+      <div class="detail-icon" style="background:${lf(l.n)};color:${lc(l.n)};border:1.5px solid ${lc(l.n)}">L${l.n}</div>
+      <div>
+        <div style="font-size:23px;font-weight:700;color:${lc(l.n)}">${l.name}</div>
+        <div style="font-size:13px;color:var(--color-text-tertiary);font-family:var(--font-mono);margin-top:2px">${l.en}</div>
+      </div>
+    </div>
+    <div class="krow"><div class="kk">PDU</div><div class="kv" style="font-family:var(--font-mono);color:${lc(l.n)}">${l.pdu}</div></div>
+    <div class="krow"><div class="kk">Funktion</div><div class="kv">${l.fun}</div></div>
+    <div class="krow"><div class="kk">SAP</div><div class="kv">${l.sap}</div></div>
+    <div class="krow"><div class="kk">Protokolle</div><div class="kv">${pills}</div></div>
+    <div class="abox" style="background:${lf(l.n)};border-color:${lc(l.n)}55">
+      <span style="color:${lc(l.n)};font-weight:700">👑 </span>${l.arist}
+    </div>`;
+}
+
+/* ══════════ VIEW 2 ══════════ */
+function buildV2(){
+  const s=document.getElementById('v2s');
+  L.forEach((l,i)=>{
+    s.appendChild(makeRow(l,runAristo));
+    if(i<L.length-1){
+      const g=document.createElement('div');
+      g.className='sap-gap';
+      g.id=`sg${l.n}`;
+      g.innerHTML=`<div class="sap-line"></div><span class="sap-tag">SAP</span><span class="arr" id="ar${l.n}" style="color:${lc(l.n)}">↓</span>`;
+      s.appendChild(g);
+    }
+  });
+}
+
+function runAristo(sel){
+  // Highlight stack
+  document.querySelectorAll('#v2s .lrow').forEach(r=>{
+    const n=parseInt(r.dataset.n),idx=L.findIndex(x=>x.n===n),si=L.findIndex(x=>x.n===sel.n);
+    r.className=`lrow${n===sel.n?' a'+sel.n:''}${idx<si?' dim':''}`;
+  });
+  L.forEach(l=>{
+    const ar=document.getElementById(`ar${l.n}`);
+    if(!ar) return;
+    const li=L.findIndex(x=>x.n===l.n),si=L.findIndex(x=>x.n===sel.n);
+    ar.style.opacity=li>=si?'1':'0';
+  });
+  // Title
+  document.getElementById('a2title').innerHTML=`<span>👑</span><span style="color:${lc(sel.n)}">L${sel.n} — ${sel.name}</span>`;
+  document.getElementById('a2idle').style.display='none';
+  document.getElementById('a2tracks').style.display='block';
+  document.getElementById('ft-down').innerHTML='';
+  document.getElementById('ft-up').innerHTML='';
+
+  const si=L.findIndex(x=>x.n===sel.n);
+  const below=L.slice(si);
+
+  below.forEach((l,i)=>{
+    const r=document.createElement('div');
+    r.className='frow';
+    r.style.borderColor=lc(l.n).replace('var(','').replace(')','')+'44';
+    r.style.background=lf(l.n);
+    r.innerHTML=`<div class="frow-n" style="color:${lc(l.n)}">L${l.n}</div><div><div class="frow-name" style="color:${lc(l.n)}">${l.name}</div><div class="frow-sub">${i===0?'Initiiert Aufgabe':'Empfängt Delegation'}</div></div>`;
+    document.getElementById('ft-down').appendChild(r);
+    setTimeout(()=>r.classList.add('vis'),i*100);
+  });
+
+  [...below].reverse().forEach((l,i)=>{
+    const r=document.createElement('div');
+    r.className='frow';
+    r.style.borderColor=lc(l.n).replace('var(','').replace(')','')+'44';
+    r.style.background=lf(l.n);
+    r.innerHTML=`<div class="frow-n" style="color:${lc(l.n)}">L${l.n}</div><div><div class="frow-name" style="color:${lc(l.n)}">${l.name}</div><div class="frow-sub">${i===0?'Führt aus, gibt zurück':'Reicht Ergebnis nach oben'}</div></div>`;
+    document.getElementById('ft-up').appendChild(r);
+    setTimeout(()=>r.classList.add('vis'),i*100+250);
+  });
+}
+
+/* ══════════ VIEW 3 – Encapsulation ══════════ */
+const STEPS=[
+  {a:7,b:null,pdu:'Daten',         label:'L7 erzeugt Nutzdaten'},
+  {a:6,b:null,pdu:'L6+Daten',      label:'L6 kodiert / verschlüsselt'},
+  {a:5,b:null,pdu:'L5+L6+Daten',   label:'L5 öffnet Sitzung'},
+  {a:4,b:null,pdu:'TCP-Segment',   label:'L4 erstellt Segment + Port'},
+  {a:3,b:null,pdu:'IP-Paket',      label:'L3 verpackt IP-Paket'},
+  {a:2,b:null,pdu:'Ethernet-Frame',label:'L2 fügt MAC-Adresse hinzu'},
+  {a:1,b:1,   pdu:'■■ Bits',       label:'L1 überträgt Bits → Medium'},
+  {a:null,b:2,pdu:'Frame',         label:'L2 prüft Frame & CRC'},
+  {a:null,b:3,pdu:'IP-Paket',      label:'L3 liest IP, prüft Route'},
+  {a:null,b:4,pdu:'Segment',       label:'L4 prüft Port & TCP-ACK'},
+  {a:null,b:5,pdu:'Daten',         label:'L5–L6 rekonstruieren Sitzung'},
+  {a:null,b:7,pdu:'Daten ✓',       label:'L7 übergibt Daten an Anwendung ✓'},
+];
+
+let eStep=-1, eTimer=null;
+
+function buildEncStacks(){
+  ['ea','eb'].forEach(id=>{
+    const c=document.getElementById(id);
+    L.forEach(l=>{
+      const r=document.createElement('div');
+      r.className='elrow';r.id=`${id}-${l.n}`;
+      r.innerHTML=`<div class="elnum" id="${id}-num${l.n}">${l.n}</div><div class="elname">${l.name}</div><div class="epdu" id="${id}-p${l.n}"></div>`;
+      c.appendChild(r);
+    });
+  });
+}
+
+function encReset(){
+  clearTimeout(eTimer);eStep=-1;
+  document.getElementById('stxt').textContent='Bereit';
+  document.getElementById('pfill').style.width='0%';
+  const p=document.getElementById('pkt');p.style.left='-5%';p.style.opacity='0';
+  document.querySelectorAll('.elrow').forEach(e=>{e.className='elrow';});
+  document.querySelectorAll('[id^="ea-p"],[id^="eb-p"]').forEach(e=>e.textContent='');
+  document.getElementById('pdu-a').innerHTML='';
+  document.getElementById('pdu-b').innerHTML='';
+}
+function encGo(){encReset();nextStep();}
+function nextStep(){
+  eStep++;
+  if(eStep>=STEPS.length){eStep=-1;return;}
+  const s=STEPS[eStep];
+  document.getElementById('stxt').textContent=`${eStep+1}/${STEPS.length} — ${s.label}`;
+  document.getElementById('pfill').style.width=`${((eStep+1)/STEPS.length)*100}%`;
+  document.querySelectorAll('.elrow').forEach(e=>{e.className='elrow';});
+
+  const n=s.a||s.b;
+  if(s.a){
+    const el=document.getElementById(`ea-${s.a}`);
+    if(el) el.className=`elrow hi${s.a}`;
+    const pe=document.getElementById(`ea-p${s.a}`);if(pe) pe.textContent=s.pdu;
+    if(eStep<=5){
+      const pa=document.getElementById('pdu-a');
+      const row=document.createElement('div');row.className='pdu-row';
+      row.innerHTML=`<div class="pdu-hdr" style="background:${lc(s.a).replace('var(','').replace(')','')};background:${lc(s.a)}">L${s.a}</div><div class="pdu-data">${s.pdu}</div>`;
+      pa.insertBefore(row,pa.firstChild);
+      setTimeout(()=>row.classList.add('show'),20);
+    }
+  }
+  if(s.b){
+    const el=document.getElementById(`eb-${s.b}`);
+    if(el) el.className=`elrow hi${s.b}`;
+    const pe=document.getElementById(`eb-p${s.b}`);if(pe) pe.textContent=s.pdu;
+    if(eStep>=7){
+      const pb=document.getElementById('pdu-b');
+      const row=document.createElement('div');row.className='pdu-row';
+      row.innerHTML=`<div class="pdu-hdr" style="background:${lc(s.b)}">L${s.b}</div><div class="pdu-data">${s.pdu}</div>`;
+      pb.appendChild(row);
+      setTimeout(()=>row.classList.add('show'),20);
+    }
+  }
+  const pkt=document.getElementById('pkt');
+  pkt.textContent=s.pdu;
+  pkt.style.background=lc(n);
+  pkt.style.opacity='1';
+  pkt.style.left=eStep<=5?'8%':eStep===6?'50%':'88%';
+  eTimer=setTimeout(nextStep,1500);
+}
+
+/* ══════════ VIEW 4 – OSI vs TCP/IP ══════════ */
+let v4sel=null;
+
+function buildV4(){
+  // OSI stack
+  const s4=document.getElementById('s4');
+  L.forEach(l=>s4.appendChild(makeRow(l,()=>v4Click(l.tcp))));
+  // TCP/IP rows
+  const ts=document.getElementById('ts');
+  TCPIP.forEach(t=>{
+    const d=document.createElement('div');
+    d.className=`trow ${t.cls}`;d.dataset.id=t.id;
+    d.innerHTML=`<div><div class="trow-name">${t.name}</div><div class="trow-proto">${t.proto}</div></div>`;
+    d.onclick=()=>v4Click(t.id);
+    ts.appendChild(d);
+  });
+}
+
+function v4Click(tid){
+  v4sel=tid;
+  const t=TCPIP.find(x=>x.id===tid);
+  // OSI rows
+  document.querySelectorAll('#s4 .lrow').forEach(r=>{
+    const n=parseInt(r.dataset.n);
+    if(t.osi.includes(n)){r.className=`lrow a${n}`;r.classList.remove('faded');}
+    else{r.className='lrow faded';}
+  });
+  // TCP rows
+  document.querySelectorAll('#ts .trow').forEach(r=>{
+    r.classList.toggle('sel',r.dataset.id===tid);
+  });
+  drawMap(t);
+}
+
+function drawMap(t){
+  const svg=document.getElementById('msvg');
+  const s4=document.getElementById('s4');
+  const ts=document.getElementById('ts');
+  const svgR=svg.getBoundingClientRect();
+  const h=Math.max(s4.getBoundingClientRect().height,ts.getBoundingClientRect().height);
+  svg.setAttribute('viewBox',`0 0 72 ${h}`);
+  svg.setAttribute('height',h);
+  svg.innerHTML='';
+
+  const tEl=ts.querySelector(`[data-id="${t.id}"]`);
+  if(!tEl) return;
+  const tR=tEl.getBoundingClientRect();
+  const ty=(tR.top+tR.bottom)/2 - svgR.top;
+
+  t.osi.forEach(n=>{
+    const oEl=s4.querySelector(`[data-n="${n}"]`);if(!oEl)return;
+    const oR=oEl.getBoundingClientRect();
+    const oy=(oR.top+oR.bottom)/2 - svgR.top;
+    const path=document.createElementNS('http://www.w3.org/2000/svg','path');
+    path.setAttribute('d',`M 0 ${oy} C 30 ${oy}, 42 ${ty}, 72 ${ty}`);
+    // get computed color
+    const tmp=document.createElement('div');tmp.style.color=lc(n);document.body.appendChild(tmp);
+    const col=getComputedStyle(tmp).color;document.body.removeChild(tmp);
+    path.setAttribute('stroke',col);
+    path.setAttribute('stroke-width','2');path.setAttribute('fill','none');
+    path.setAttribute('stroke-dasharray','5 3');path.setAttribute('opacity','.8');
+    svg.appendChild(path);
+  });
+}
+
+window.addEventListener('resize',()=>{if(v4sel){const t=TCPIP.find(x=>x.id===v4sel);if(t)drawMap(t);}});
+
+/* ══ INIT ══ */
+buildV1();buildV2();buildEncStacks();buildV4();
+</script>
+</body>
+</html>

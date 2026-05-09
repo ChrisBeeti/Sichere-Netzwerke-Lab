@@ -1,0 +1,584 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>DHCP — FOM SS 2026</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --lc1:#854F0B;--lf1:#FAEEDA;--lt1:#633806;
+  --lc2:#3B6D11;--lf2:#EAF3DE;--lt2:#27500A;
+  --lc3:#0F6E56;--lf3:#E1F5EE;--lt3:#085041;
+  --lc4:#185FA5;--lf4:#E6F1FB;--lt4:#0C447C;
+  --lc6:#534AB7;--lf6:#EEEDFE;--lt6:#3C3489;
+  --color-background-primary:#fff;
+  --color-background-secondary:#f5f5f5;
+  --color-text-primary:#111;
+  --color-text-secondary:#555;
+  --color-text-tertiary:#888;
+  --color-border-primary:#bbb;
+  --color-border-secondary:#ddd;
+  --color-border-tertiary:#eee;
+  --border-radius-md:8px;
+  --border-radius-lg:12px;
+  --font-sans:system-ui,-apple-system,sans-serif;
+  --font-mono:'SF Mono',Consolas,monospace;
+  /* DHCP message colors */
+  --cd:#854F0B; --cd-bg:#FAEEDA; /* DISCOVER – amber */
+  --co:#185FA5; --co-bg:#E6F1FB; /* OFFER    – blue  */
+  --cr:#534AB7; --cr-bg:#EEEDFE; /* REQUEST  – purple*/
+  --ca:#0F6E56; --ca-bg:#E1F5EE; /* ACK      – teal  */
+  --cx:#c0392b; --cx-bg:#fef0ee; /* RELEASE  – red   */
+}
+@media(prefers-color-scheme:dark){:root{
+  --lc1:#EF9F27;--lf1:#3d2200;--lt1:#FAEEDA;
+  --lc2:#97C459;--lf2:#1a3300;--lt2:#EAF3DE;
+  --lc3:#5DCAA5;--lf3:#003326;--lt3:#E1F5EE;
+  --lc4:#85B7EB;--lf4:#002966;--lt4:#E6F1FB;
+  --lc6:#AFA9EC;--lf6:#1e1966;--lt6:#EEEDFE;
+  --color-background-primary:#1a1a1a;
+  --color-background-secondary:#242424;
+  --color-text-primary:#f0f0f0;
+  --color-text-secondary:#aaa;
+  --color-text-tertiary:#666;
+  --color-border-primary:#444;
+  --color-border-secondary:#333;
+  --color-border-tertiary:#2a2a2a;
+  --cd:#EF9F27;--cd-bg:#3d2200;
+  --co:#85B7EB;--co-bg:#002966;
+  --cr:#AFA9EC;--cr-bg:#1e1966;
+  --ca:#5DCAA5;--ca-bg:#003326;
+  --cx:#F87171;--cx-bg:#1e0404;
+}}
+body{font-family:var(--font-sans);background:var(--color-background-primary);color:var(--color-text-primary);padding:1.5rem 1rem 3rem}
+
+.page-header{text-align:center;margin-bottom:1.75rem}
+.page-kicker{font-size:14px;letter-spacing:.1em;text-transform:uppercase;color:var(--color-text-tertiary);margin-bottom:5px;font-family:var(--font-mono)}
+.page-title{font-size:34px;font-weight:600}
+.page-sub{font-size:17px;color:var(--color-text-secondary);margin-top:4px}
+
+.main{display:grid;grid-template-columns:1fr 300px;gap:16px;align-items:start}
+@media(max-width:820px){.main{grid-template-columns:1fr}}
+
+.panel{background:var(--color-background-secondary);border:0.5px solid var(--color-border-tertiary);border-radius:var(--border-radius-lg);padding:1.25rem}
+.panel-white{background:var(--color-background-primary);border:0.5px solid var(--color-border-secondary);border-radius:var(--border-radius-lg);padding:1.25rem}
+.sec-label{font-size:12px;letter-spacing:.1em;text-transform:uppercase;color:var(--color-text-tertiary);font-family:var(--font-mono);margin-bottom:10px}
+
+/* ── STEP TABS ── */
+.step-nav{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:14px}
+.sbtn{cursor:pointer;padding:8px 16px;border-radius:var(--border-radius-md);border:1px solid var(--color-border-secondary);background:transparent;color:var(--color-text-secondary);font-size:15px;font-family:var(--font-sans);transition:all .15s;line-height:1.3}
+.sbtn:hover{background:var(--color-background-secondary);color:var(--color-text-primary)}
+.sbtn.act{font-weight:600;border-color:currentColor}
+
+/* ── CANVAS ── */
+.cw{background:var(--color-background-primary);border:0.5px solid var(--color-border-tertiary);border-radius:var(--border-radius-md);overflow:hidden;margin-bottom:10px}
+canvas{display:block;width:100%;height:260px}
+
+/* ── CTRL ROW ── */
+.ctrl-row{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:10px}
+.cbtn{cursor:pointer;padding:8px 20px;border-radius:var(--border-radius-md);border:1px solid var(--color-border-secondary);background:var(--color-background-primary);color:var(--color-text-secondary);font-size:15px;font-family:var(--font-sans);transition:all .15s;font-weight:500}
+.cbtn:hover{background:var(--color-background-secondary);color:var(--color-text-primary)}
+.cbtn.go{background:var(--lc3);color:#fff;border-color:var(--lc3);font-weight:700}
+.status{font-family:var(--font-mono);font-size:13px;color:var(--color-text-tertiary)}
+
+/* ── STEP DETAIL CARD ── */
+.step-card{border-radius:var(--border-radius-lg);padding:1.1rem;border:0.5px solid;transition:all .3s}
+.step-card-title{font-size:18px;font-weight:700;margin-bottom:4px}
+.step-card-sub{font-size:13px;font-family:var(--font-mono);color:var(--color-text-tertiary);margin-bottom:10px}
+.step-card-body{font-size:14px;color:var(--color-text-secondary);line-height:1.6}
+.msg-field{display:flex;gap:8px;padding:5px 0;border-bottom:0.5px solid var(--color-border-tertiary);font-size:14px}
+.msg-field:last-child{border-bottom:none}
+.field-key{font-family:var(--font-mono);font-size:12px;color:var(--color-text-tertiary);min-width:110px;flex-shrink:0;padding-top:1px}
+.field-val{color:var(--color-text-primary);line-height:1.4}
+.bcast-badge{display:inline-block;padding:2px 8px;border-radius:4px;font-family:var(--font-mono);font-size:11px;font-weight:700;margin-left:6px}
+
+/* ── RIGHT PANEL: overview ── */
+.dora-seq{display:flex;flex-direction:column;gap:6px}
+.dora-item{display:flex;align-items:center;gap:10px;padding:9px 12px;border-radius:var(--border-radius-md);border:0.5px solid var(--color-border-tertiary);background:var(--color-background-primary);cursor:pointer;transition:all .15s}
+.dora-item:hover{border-color:var(--color-border-primary);background:var(--color-background-secondary)}
+.dora-item.act{font-weight:600;border-color:currentColor}
+.dora-num{width:26px;height:26px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;font-family:var(--font-mono);flex-shrink:0;color:#fff}
+.dora-name{font-size:15px;font-weight:600;flex:1}
+.dora-dir{font-family:var(--font-mono);font-size:12px;color:var(--color-text-tertiary)}
+
+.info-card{background:var(--color-background-primary);border:0.5px solid var(--color-border-secondary);border-radius:var(--border-radius-lg);padding:1rem;margin-top:10px}
+.ic-title{font-family:var(--font-mono);font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:var(--color-text-tertiary);margin-bottom:5px}
+.ic-val{font-size:14px;color:var(--color-text-primary);line-height:1.55}
+
+.footer{text-align:center;margin-top:14px;font-size:14px;color:var(--color-text-tertiary);font-family:var(--font-mono)}
+</style>
+</head>
+<body>
+
+<div class="page-header">
+  <div class="page-kicker">Vermittlungsschicht · Anwendungsdienst · RFC 2131 · SS 2026</div>
+  <div class="page-title">DHCP</div>
+  <div class="page-sub">Dynamic Host Configuration Protocol — IP-Adresszuweisung &amp; DORA-Prozess</div>
+</div>
+
+<div class="main">
+
+  <!-- ═══ LEFT ═══ -->
+  <div style="display:flex;flex-direction:column;gap:14px">
+
+    <!-- Step selector -->
+    <div class="panel">
+      <div class="sec-label">DORA-Prozess — Nachricht wählen oder vollständig animieren</div>
+      <div class="step-nav">
+        <button class="sbtn act" id="btn-all"     onclick="setStep('all',this)">▶ Komplett</button>
+        <button class="sbtn" id="btn-discover" style="color:var(--cd)" onclick="setStep('discover',this)">1 DISCOVER</button>
+        <button class="sbtn" id="btn-offer"    style="color:var(--co)" onclick="setStep('offer',this)">2 OFFER</button>
+        <button class="sbtn" id="btn-request"  style="color:var(--cr)" onclick="setStep('request',this)">3 REQUEST</button>
+        <button class="sbtn" id="btn-ack"      style="color:var(--ca)" onclick="setStep('ack',this)">4 ACK</button>
+        <button class="sbtn" id="btn-release"  style="color:var(--cx)" onclick="setStep('release',this)">5 RELEASE</button>
+      </div>
+
+      <!-- Canvas -->
+      <div class="ctrl-row">
+        <button class="cbtn go" onclick="startAnim()">▶ Starten</button>
+        <button class="cbtn"    onclick="stopAnim()">⏹ Stop</button>
+        <span class="status" id="status">Bereit</span>
+      </div>
+      <div class="cw"><canvas id="c" height="260"></canvas></div>
+
+      <!-- Step detail card -->
+      <div class="step-card" id="step-card"></div>
+    </div>
+
+  </div>
+
+  <!-- ═══ RIGHT ═══ -->
+  <div style="display:flex;flex-direction:column;gap:14px">
+
+    <div class="panel">
+      <div class="sec-label">DORA-Sequenz</div>
+      <div class="dora-seq" id="dora-seq"></div>
+    </div>
+
+    <div class="panel-white">
+      <div class="sec-label">Übertragene Parameter</div>
+      <div style="font-size:14px;color:var(--color-text-secondary);line-height:1.65">
+        Der DHCP-Server teilt dem Client bei ACK mit:
+        <ul style="margin:8px 0 0 18px;display:flex;flex-direction:column;gap:4px">
+          <li><span style="color:var(--lc4);font-weight:600">IP-Adresse</span> (Leih-Adresse)</li>
+          <li><span style="color:var(--lc4);font-weight:600">Subnetzmaske</span></li>
+          <li><span style="color:var(--lc1);font-weight:600">Default-Router</span> (Gateway)</li>
+          <li><span style="color:var(--lc2);font-weight:600">DNS-Server</span></li>
+          <li><span style="color:var(--lc3);font-weight:600">Lease-Zeit</span> (Gültigkeitsdauer)</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="panel-white">
+      <div class="sec-label">Ports</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+        <div class="info-card"><div class="ic-title">Server</div><div class="ic-val" style="font-family:var(--font-mono);color:var(--lc4)">UDP 67</div></div>
+        <div class="info-card"><div class="ic-title">Client</div><div class="ic-val" style="font-family:var(--font-mono);color:var(--lc4)">UDP 68</div></div>
+        <div class="info-card"><div class="ic-title">IPv6 Server</div><div class="ic-val" style="font-family:var(--font-mono);color:var(--lc6)">UDP 547</div></div>
+        <div class="info-card"><div class="ic-title">IPv6 Client</div><div class="ic-val" style="font-family:var(--font-mono);color:var(--lc6)">UDP 546</div></div>
+      </div>
+    </div>
+
+    <div class="panel-white">
+      <div class="sec-label">Vorteile</div>
+      <div style="font-size:14px;color:var(--color-text-secondary);line-height:1.7">
+        ✓ Automatische IP-Konfiguration<br>
+        ✓ Weniger Fehlerquellen (kein manuelles Tippen)<br>
+        ✓ Zentrale Verwaltung aller Netzwerkparameter<br>
+        ✓ Flexible Adressänderungen ohne Clienteingriff
+      </div>
+      <div class="sec-label" style="margin-top:12px">Nachteile</div>
+      <div style="font-size:14px;color:var(--color-text-secondary);line-height:1.7">
+        ✗ Zusätzlicher Netzwerkverkehr (Broadcasts)<br>
+        ✗ DHCP-Server als Single Point of Failure<br>
+        ✗ Administrationsaufwand für Reservierungen
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<div class="footer">DHCP · RFC 2131 · SS 2026 · Christian Böttger M.Sc.</div>
+
+<script>
+/* ══════════════════════════════════
+   HELPERS
+══════════════════════════════════ */
+const cv = n => getComputedStyle(document.documentElement).getPropertyValue(n).trim();
+const BG  = ()=>cv('--color-background-primary');
+const BG2 = ()=>cv('--color-background-secondary');
+const BRD = ()=>cv('--color-border-secondary');
+const TXT = ()=>cv('--color-text-primary');
+const TXT2= ()=>cv('--color-text-secondary');
+const TXT3= ()=>cv('--color-text-tertiary');
+
+/* ══════════════════════════════════
+   DATA
+══════════════════════════════════ */
+const STEPS = [
+  {
+    id:'discover', n:1, name:'DHCPDISCOVER', dir:'Client → Broadcast',
+    col:'--cd', bg:'--cd-bg',
+    emoji:'🔍', broadcast:true,
+    title:'IP Lease Anforderung',
+    sub:'Client hat noch keine IP — Broadcast an alle',
+    body:'Der Client startet ohne IP-Adresse. Er sendet eine DHCPDISCOVER-Nachricht als Broadcast im gesamten Netz, um einen DHCP-Server zu finden.',
+    fields:[
+      ['Quelle (src)',   '0.0.0.0 (keine IP)'],
+      ['Ziel (dst)',     '255.255.255.255 (Broadcast)'],
+      ['Protokoll',     'UDP · Port 67'],
+      ['Inhalt',        'MAC-Adresse des Clients, gewünschte Parameter'],
+      ['Broadcast?',    'Ja — alle Geräte im Segment empfangen'],
+    ],
+    animDir: 'c2s', bcast: true,
+  },
+  {
+    id:'offer', n:2, name:'DHCPOFFER', dir:'Server → Client',
+    col:'--co', bg:'--co-bg',
+    emoji:'🎁', broadcast:false,
+    title:'IP Lease Angebot',
+    sub:'Server bietet eine IP-Adresse an',
+    body:'Der DHCP-Server antwortet mit einem DHCPOFFER. Er schlägt eine freie IP-Adresse vor und fügt Subnetzmaske, Gateway und DNS bei. Der Client darf wählen (mehrere Server möglich).',
+    fields:[
+      ['Quelle (src)',   'IP des DHCP-Servers'],
+      ['Ziel (dst)',     'Broadcast oder MAC-Adresse des Clients'],
+      ['Protokoll',     'UDP · Port 68'],
+      ['Inhalt',        'Angebotene IP, Lease-Zeit, Netzwerkparameter'],
+      ['Broadcast?',    'Nein (Unicast wenn möglich)'],
+    ],
+    animDir: 's2c', bcast: false,
+  },
+  {
+    id:'request', n:3, name:'DHCPREQUEST', dir:'Client → Broadcast',
+    col:'--cr', bg:'--cr-bg',
+    emoji:'📋', broadcast:true,
+    title:'IP Lease Auswahl',
+    sub:'Client wählt ein Angebot — Broadcast informiert alle',
+    body:'Der Client wählt ein DHCPOFFER aus (falls mehrere Server antworteten) und sendet DHCPREQUEST erneut als Broadcast. Damit werden alle nicht-gewählten Server informiert, ihre reservierten Adressen freizugeben.',
+    fields:[
+      ['Quelle (src)',   '0.0.0.0 (noch ohne IP)'],
+      ['Ziel (dst)',     '255.255.255.255 (Broadcast)'],
+      ['Protokoll',     'UDP · Port 67'],
+      ['Inhalt',        'Gewählter Server, gewünschte IP-Adresse'],
+      ['Broadcast?',    'Ja — informiert alle Server im Netz'],
+    ],
+    animDir: 'c2s', bcast: true,
+  },
+  {
+    id:'ack', n:4, name:'DHCPACK', dir:'Server → Client',
+    col:'--ca', bg:'--ca-bg',
+    emoji:'✅', broadcast:false,
+    title:'IP Lease Bestätigung',
+    sub:'Server bestätigt — Client konfiguriert sich',
+    body:'Der DHCP-Server bestätigt die Zuweisung mit DHCPACK. Der Client übernimmt die IP-Adresse, Subnetzmaske, Default-Router und DNS-Server. Die Lease-Zeit startet.',
+    fields:[
+      ['Quelle (src)',   'IP des DHCP-Servers'],
+      ['Ziel (dst)',     'IP-Adresse des Clients (nach Bestätigung)'],
+      ['Protokoll',     'UDP · Port 68'],
+      ['Inhalt',        'Bestätigte IP, Lease-Zeit, alle Netzwerkparameter'],
+      ['Broadcast?',    'Nein (Unicast)'],
+    ],
+    animDir: 's2c', bcast: false,
+  },
+  {
+    id:'release', n:5, name:'DHCPRELEASE', dir:'Client → Server',
+    col:'--cx', bg:'--cx-bg',
+    emoji:'🔓', broadcast:false,
+    title:'IP Lease Freigabe',
+    sub:'Client gibt die IP-Adresse zurück',
+    body:'Der Client sendet DHCPRELEASE, um die geliehene IP-Adresse vorzeitig zurückzugeben — z. B. beim Herunterfahren. Der DHCP-Server kann die Adresse wieder vergeben.',
+    fields:[
+      ['Quelle (src)',   'Aktuelle IP des Clients'],
+      ['Ziel (dst)',     'IP des DHCP-Servers (Unicast)'],
+      ['Protokoll',     'UDP · Port 67'],
+      ['Inhalt',        'Freizugebende IP-Adresse'],
+      ['Broadcast?',    'Nein (Unicast an Server)'],
+    ],
+    animDir: 'c2s', bcast: false,
+  },
+];
+
+/* ══════════════════════════════════
+   BUILD DORA LIST (right)
+══════════════════════════════════ */
+function buildDoraList() {
+  const c = document.getElementById('dora-seq');
+  STEPS.forEach(s => {
+    const el = document.createElement('div');
+    el.className = 'dora-item'; el.id = 'di-'+s.id;
+    el.style.color = cv(s.col);
+    el.innerHTML = `
+      <div class="dora-num" style="background:${cv(s.col)}">${s.n}</div>
+      <div>
+        <div class="dora-name">${s.name}</div>
+        <div class="dora-dir" style="font-size:11px">${s.dir}</div>
+      </div>
+      <span style="font-size:18px">${s.emoji}</span>`;
+    el.onclick = () => { setStep(s.id, document.getElementById('btn-'+s.id)); };
+    c.appendChild(el);
+  });
+}
+
+/* ══════════════════════════════════
+   STEP SELECTION
+══════════════════════════════════ */
+let currentStep = 'all';
+let animId = null, animT = 0;
+
+function setStep(id, btn) {
+  currentStep = id;
+  document.querySelectorAll('.sbtn').forEach(b=>b.classList.remove('act'));
+  document.querySelectorAll('.dora-item').forEach(e=>e.classList.remove('act'));
+  if(btn) btn.classList.add('act');
+  if(id !== 'all') {
+    const di = document.getElementById('di-'+id);
+    if(di) di.classList.add('act');
+  }
+  stopAnim();
+  renderStepCard(id);
+}
+
+function renderStepCard(id) {
+  const card = document.getElementById('step-card');
+  if(id === 'all') {
+    card.style.background = BG2();
+    card.style.borderColor = cv('--color-border-tertiary');
+    card.innerHTML = `
+      <div class="step-card-title">DORA-Prozess</div>
+      <div class="step-card-sub">Discover → Offer → Request → Acknowledge</div>
+      <div class="step-card-body">Der vollständige DHCP-Handshake besteht aus vier Nachrichten (DORA). Klicke ▶ Starten für die komplette Animation — oder wähle eine einzelne Nachricht oben.</div>`;
+    return;
+  }
+  const s = STEPS.find(x=>x.id===id);
+  if(!s) return;
+  const col = cv(s.col), bg = cv(s.bg);
+  card.style.background = bg;
+  card.style.borderColor = col;
+  card.innerHTML = `
+    <div class="step-card-title" style="color:${col}">${s.emoji} ${s.name} — ${s.title}</div>
+    <div class="step-card-sub">${s.dir}</div>
+    <div class="step-card-body" style="margin-bottom:12px">${s.body}</div>
+    ${s.fields.map(([k,v])=>`
+      <div class="msg-field">
+        <div class="field-key">${k}</div>
+        <div class="field-val">${v}${k==='Broadcast?'&&v.startsWith('Ja')?`<span class="bcast-badge" style="background:${bg};color:${col};border:0.5px solid ${col}">BROADCAST</span>`:''}</div>
+      </div>`).join('')}`;
+}
+
+/* ══════════════════════════════════
+   CANVAS
+══════════════════════════════════ */
+function prepCanvas() {
+  const c = document.getElementById('c');
+  c.width  = c.clientWidth * devicePixelRatio;
+  c.height = 260 * devicePixelRatio;
+  const x  = c.getContext('2d');
+  x.scale(devicePixelRatio, devicePixelRatio);
+  x.fillStyle = BG();
+  x.fillRect(0,0,c.clientWidth,260);
+  return [x, c.clientWidth, 260];
+}
+
+function drawDevice(x, cx, cy, label, sub, col, active=false, icon='') {
+  // Body rectangle
+  x.fillStyle   = active ? cv('--lf3') : BG2();
+  x.strokeStyle = active ? cv('--lc3') : BRD();
+  x.lineWidth   = active ? 2 : 1.5;
+  x.beginPath();
+  const W=64, H=46;
+  x.roundRect(cx-W/2, cy-H/2, W, H, 6);
+  x.fill(); x.stroke();
+  // icon
+  x.font='22px sans-serif'; x.textAlign='center';
+  x.fillText(icon, cx, cy-2);
+  // label
+  x.font=`700 11px ${cv('--font-mono')}`;
+  x.fillStyle=active?cv('--lc3'):TXT();
+  x.fillText(label, cx, cy+20);
+  // sub
+  x.font=`11px ${cv('--font-sans')}`;
+  x.fillStyle=TXT3();
+  x.fillText(sub, cx, cy+H/2+16);
+}
+
+function drawArrow(x, x1,y1,x2,y2,col,label='',broadcast=false) {
+  // line
+  x.strokeStyle=col; x.lineWidth=2.5;
+  x.setLineDash(broadcast?[6,3]:[]);
+  x.beginPath(); x.moveTo(x1,y1); x.lineTo(x2,y2); x.stroke();
+  x.setLineDash([]);
+  // arrowhead
+  const ang=Math.atan2(y2-y1,x2-x1);
+  x.fillStyle=col;
+  x.beginPath();
+  x.moveTo(x2,y2);
+  x.lineTo(x2-12*Math.cos(ang-0.35),y2-12*Math.sin(ang-0.35));
+  x.lineTo(x2-12*Math.cos(ang+0.35),y2-12*Math.sin(ang+0.35));
+  x.fill();
+  // label
+  if(label){
+    const mx=(x1+x2)/2, my=(y1+y2)/2;
+    x.font=`700 12px ${cv('--font-mono')}`;
+    x.fillStyle=col;
+    x.textAlign='center';
+    x.fillText(label,mx,my-10);
+    if(broadcast){
+      x.font=`10px ${cv('--font-mono')}`;
+      x.fillStyle=col;
+      x.globalAlpha=0.7;
+      x.fillText('Broadcast',mx,my+4);
+      x.globalAlpha=1;
+    }
+  }
+}
+
+function drawPacket(x, px, py, col, label) {
+  x.shadowBlur=10; x.shadowColor=col;
+  x.fillStyle=col;
+  x.beginPath(); x.arc(px,py,11,0,Math.PI*2); x.fill();
+  x.shadowBlur=0;
+  x.font=`700 9px ${cv('--font-mono')}`;
+  x.fillStyle='#fff'; x.textAlign='center';
+  x.fillText(label, px, py+3);
+}
+
+function drawBroadcastRings(x, cx, cy, t, col) {
+  for(let i=0;i<3;i++){
+    const r=20+((t*2+i*25)%80);
+    x.strokeStyle=col; x.lineWidth=1.5;
+    x.globalAlpha=Math.max(0, 1-(r-20)/80)*0.5;
+    x.beginPath(); x.arc(cx,cy,r,0,Math.PI*2); x.stroke();
+    x.globalAlpha=1;
+  }
+}
+
+/* ── Draw one DHCP step with animated packet ── */
+function drawStep(stepId, t) {
+  const [x, W, H] = prepCanvas();
+  const s = STEPS.find(s=>s.id===stepId);
+  if(!s) return;
+
+  const col=cv(s.col), bg=cv(s.bg);
+  const CLIENT_X=W*0.18, SERVER_X=W*0.82, MID_Y=H*0.48;
+  const prog=(t%90)/90;
+
+  // Timeline labels
+  x.font=`600 12px ${cv('--font-mono')}`; x.textAlign='center'; x.fillStyle=TXT3();
+  x.fillText('DHCP CLIENT',CLIENT_X,H-14);
+  x.fillText('DHCP SERVER',SERVER_X,H-14);
+
+  // Vertical timelines
+  [CLIENT_X,SERVER_X].forEach(lx=>{
+    x.strokeStyle=BRD(); x.lineWidth=1.5; x.setLineDash([4,3]);
+    x.beginPath(); x.moveTo(lx,32); x.lineTo(lx,H-30); x.stroke();
+    x.setLineDash([]);
+  });
+
+  // Devices
+  drawDevice(x,CLIENT_X,50,'CLIENT','0.0.0.0',col,stepId==='ack','💻');
+  drawDevice(x,SERVER_X,50,'SERVER','192.168.1.1',col,false,'🖥');
+
+  // Completed arrows for previous steps (in complete mode drawn outside)
+  // Packet animation
+  const fromX = s.animDir==='c2s' ? CLIENT_X : SERVER_X;
+  const toX   = s.animDir==='c2s' ? SERVER_X : CLIENT_X;
+  const py = MID_Y;
+
+  // draw static arrow
+  drawArrow(x,fromX,py,toX,py,col,s.name,s.bcast);
+
+  // broadcast rings at source
+  if(s.bcast) drawBroadcastRings(x,fromX,py,t,col);
+
+  // animated packet
+  const px=fromX+(toX-fromX)*prog;
+  drawPacket(x,px,py,col,s.id.slice(0,3).toUpperCase());
+
+  // step label at bottom
+  x.font=`600 13px ${cv('--font-sans')}`; x.textAlign='center'; x.fillStyle=col;
+  x.fillText(s.title+' — '+s.dir, W/2, H-30);
+
+  document.getElementById('status').textContent=s.name+': '+s.body.slice(0,60)+'…';
+}
+
+/* ── Draw complete DORA animation ── */
+function drawAll(t) {
+  const [x,W,H] = prepCanvas();
+
+  const CLIENT_X=W*0.14, SERVER_X=W*0.86;
+  const STEP_Y=[80,130,175,220]; // y positions for arrows
+  const TOTAL=STEPS.length*100;
+  const tt=t%TOTAL;
+  const stepIdx=Math.floor(tt/100);
+  const stepProg=(tt%100)/100;
+
+  x.font=`700 13px ${cv('--font-mono')}`; x.textAlign='center'; x.fillStyle=TXT();
+  x.fillText('CLIENT',CLIENT_X,24); x.fillText('SERVER',SERVER_X,24);
+
+  // Vertical timelines
+  [CLIENT_X,SERVER_X].forEach(lx=>{
+    x.strokeStyle=BRD(); x.lineWidth=1.5; x.setLineDash([3,3]);
+    x.beginPath(); x.moveTo(lx,32); x.lineTo(lx,H-20); x.stroke();
+    x.setLineDash([]);
+  });
+
+  // Draw completed arrows
+  STEPS.forEach((s,i)=>{
+    if(i>=stepIdx) return;
+    const col=cv(s.col), ay=STEP_Y[i]||90+i*45;
+    const fromX=s.animDir==='c2s'?CLIENT_X:SERVER_X;
+    const toX  =s.animDir==='c2s'?SERVER_X:CLIENT_X;
+    drawArrow(x,fromX,ay,toX,ay,col,s.name,s.bcast);
+  });
+
+  // Draw current arrow + animated packet
+  if(stepIdx<STEPS.length){
+    const s=STEPS[stepIdx];
+    const col=cv(s.col), ay=STEP_Y[stepIdx]||(90+stepIdx*45);
+    const fromX=s.animDir==='c2s'?CLIENT_X:SERVER_X;
+    const toX  =s.animDir==='c2s'?SERVER_X:CLIENT_X;
+    drawArrow(x,fromX,ay,toX,ay,col,s.name,s.bcast);
+    if(s.bcast) drawBroadcastRings(x,fromX,ay,t,col);
+    const px=fromX+(toX-fromX)*stepProg;
+    drawPacket(x,px,ay,col,s.name.replace('DHCP',''));
+
+    // highlight active step in dora list
+    document.querySelectorAll('.dora-item').forEach(e=>e.classList.remove('act'));
+    const di=document.getElementById('di-'+s.id);
+    if(di) di.classList.add('act');
+
+    document.getElementById('status').textContent=`Schritt ${s.n}/5: ${s.name} — ${s.title}`;
+  }
+}
+
+/* ══════════════════════════════════
+   ANIMATION CONTROL
+══════════════════════════════════ */
+function startAnim(){
+  stopAnim(); animT=0;
+  function loop(){
+    if(currentStep==='all') drawAll(animT);
+    else drawStep(currentStep, animT);
+    animT++;
+    animId=requestAnimationFrame(loop);
+  }
+  animId=requestAnimationFrame(loop);
+}
+
+function stopAnim(){
+  if(animId){cancelAnimationFrame(animId);animId=null;}
+  // draw static hint
+  const [x,W,H]=prepCanvas();
+  x.font=`600 15px ${cv('--font-sans')}`; x.fillStyle=TXT3(); x.textAlign='center';
+  x.fillText('▶ Starten klicken für Animation',W/2,H/2);
+}
+
+/* ══ INIT ══ */
+buildDoraList();
+renderStepCard('all');
+stopAnim();
+window.addEventListener('resize',()=>{ if(!animId) stopAnim(); });
+</script>
+</body>
+</html>

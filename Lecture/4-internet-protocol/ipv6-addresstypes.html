@@ -1,0 +1,734 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>IPv6 Adresskategorien — FOM SS 2026</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --lc1:#854F0B;--lf1:#FAEEDA;
+  --lc2:#3B6D11;--lf2:#EAF3DE;
+  --lc3:#0F6E56;--lf3:#E1F5EE;
+  --lc4:#185FA5;--lf4:#E6F1FB;
+  --lc6:#534AB7;--lf6:#EEEDFE;
+  --color-background-primary:#ffffff;
+  --color-background-secondary:#f5f5f5;
+  --color-text-primary:#111;
+  --color-text-secondary:#555;
+  --color-text-tertiary:#888;
+  --color-border-primary:#bbb;
+  --color-border-secondary:#ddd;
+  --color-border-tertiary:#eee;
+  --border-radius-md:8px;
+  --border-radius-lg:12px;
+  --font-sans:system-ui,-apple-system,sans-serif;
+  --font-mono:'SF Mono',Consolas,monospace;
+  /* category colors */
+  --cu:#185FA5; --cu-bg:#E6F1FB;   /* Unicast  – blue  */
+  --cm:#534AB7; --cm-bg:#EEEDFE;   /* Multicast – purple */
+  --ca:#0F6E56; --ca-bg:#E1F5EE;   /* Anycast  – teal  */
+}
+@media(prefers-color-scheme:dark){:root{
+  --lc1:#EF9F27;--lf1:#3d2200;
+  --lc2:#97C459;--lf2:#1a3300;
+  --lc3:#5DCAA5;--lf3:#003326;
+  --lc4:#85B7EB;--lf4:#002966;
+  --lc6:#AFA9EC;--lf6:#1e1966;
+  --color-background-primary:#1a1a1a;
+  --color-background-secondary:#242424;
+  --color-text-primary:#f0f0f0;
+  --color-text-secondary:#aaa;
+  --color-text-tertiary:#666;
+  --color-border-primary:#444;
+  --color-border-secondary:#333;
+  --color-border-tertiary:#2a2a2a;
+  --cu:#85B7EB;--cu-bg:#002966;
+  --cm:#AFA9EC;--cm-bg:#1e1966;
+  --ca:#5DCAA5;--ca-bg:#003326;
+}}
+body{font-family:var(--font-sans);background:var(--color-background-primary);color:var(--color-text-primary);padding:1.5rem 1rem 3rem}
+
+.page-header{text-align:center;margin-bottom:1.75rem}
+.page-kicker{font-size:14px;letter-spacing:.1em;text-transform:uppercase;color:var(--color-text-tertiary);margin-bottom:5px;font-family:var(--font-mono)}
+.page-title{font-size:34px;font-weight:600;color:var(--color-text-primary)}
+.page-sub{font-size:17px;color:var(--color-text-secondary);margin-top:4px}
+
+/* ── MAIN LAYOUT ── */
+.main{display:grid;grid-template-columns:240px 1fr;gap:16px;align-items:start}
+@media(max-width:780px){.main{grid-template-columns:1fr}}
+
+/* ── LEFT: CATEGORY TREE ── */
+.cat-panel{background:var(--color-background-secondary);border:0.5px solid var(--color-border-tertiary);border-radius:var(--border-radius-lg);padding:1.1rem}
+.sec-label{font-size:12px;letter-spacing:.1em;text-transform:uppercase;color:var(--color-text-tertiary);font-family:var(--font-mono);margin-bottom:10px}
+.cat-group{margin-bottom:10px}
+.cat-head{display:flex;align-items:center;gap:8px;padding:9px 12px;border-radius:var(--border-radius-md);border:0.5px solid var(--color-border-secondary);background:var(--color-background-primary);margin-bottom:5px;cursor:pointer;transition:all .15s}
+.cat-head:hover{border-color:var(--color-border-primary);background:var(--color-background-secondary)}
+.cat-head.sel{font-weight:600;border-color:currentColor}
+.cat-icon{font-size:18px;flex-shrink:0}
+.cat-name{font-size:16px;font-weight:600;flex:1}
+.cat-pfx{font-family:var(--font-mono);font-size:11px;margin-left:auto;color:var(--color-text-tertiary);white-space:nowrap}
+
+.sub-btn{display:flex;align-items:center;gap:7px;width:100%;padding:7px 12px 7px 24px;border-radius:var(--border-radius-md);border:0.5px solid var(--color-border-tertiary);background:transparent;font-family:var(--font-sans);font-size:14px;color:var(--color-text-secondary);cursor:pointer;text-align:left;transition:all .15s;margin-bottom:3px}
+.sub-btn:hover{background:var(--color-background-secondary);color:var(--color-text-primary)}
+.sub-btn.sel{font-weight:600;border-color:currentColor;background:inherit}
+.sub-dot{width:9px;height:9px;border-radius:50%;flex-shrink:0}
+
+/* ── RIGHT: CONTENT PANEL ── */
+.right{display:flex;flex-direction:column;gap:14px}
+
+/* address visualizer */
+.addr-panel{background:var(--color-background-secondary);border:0.5px solid var(--color-border-tertiary);border-radius:var(--border-radius-lg);padding:1.25rem}
+.addr-title{font-size:20px;font-weight:700;margin-bottom:2px}
+.addr-sub{font-size:14px;color:var(--color-text-tertiary);font-family:var(--font-mono);margin-bottom:14px}
+
+/* 128-bit address block */
+.addr-block{background:var(--color-background-primary);border:0.5px solid var(--color-border-tertiary);border-radius:var(--border-radius-md);padding:14px 16px;margin-bottom:10px}
+.addr-label{font-size:12px;text-transform:uppercase;letter-spacing:.08em;color:var(--color-text-tertiary);font-family:var(--font-mono);margin-bottom:8px}
+.addr-groups{display:flex;gap:3px;flex-wrap:nowrap;overflow-x:auto}
+.ag{display:flex;flex-direction:column;align-items:center;gap:2px;flex:1;min-width:0}
+.ag-hex{padding:6px 4px;border-radius:4px;font-family:var(--font-mono);font-size:13px;font-weight:700;text-align:center;width:100%;transition:all .3s;white-space:nowrap;border:0.5px solid transparent}
+.ag-bit{font-size:10px;color:var(--color-text-tertiary);font-family:var(--font-mono);text-align:center}
+.addr-legend{display:flex;gap:12px;flex-wrap:wrap;margin-top:8px}
+.leg-item{display:flex;align-items:center;gap:5px;font-size:13px;color:var(--color-text-secondary)}
+.leg-dot{width:12px;height:12px;border-radius:2px;flex-shrink:0}
+
+/* canvas animation */
+.anim-panel{background:var(--color-background-secondary);border:0.5px solid var(--color-border-tertiary);border-radius:var(--border-radius-lg);padding:1.25rem}
+.ctrl-row{display:flex;gap:8px;align-items:center;margin-bottom:10px;flex-wrap:wrap}
+.cbtn{cursor:pointer;padding:8px 20px;border-radius:var(--border-radius-md);border:1px solid var(--color-border-secondary);background:var(--color-background-primary);color:var(--color-text-secondary);font-size:15px;font-family:var(--font-sans);transition:all .15s;font-weight:500}
+.cbtn:hover{background:var(--color-background-secondary);color:var(--color-text-primary)}
+.cbtn.go{background:var(--lc3);color:#fff;border-color:var(--lc3);font-weight:700}
+.status{font-family:var(--font-mono);font-size:13px;color:var(--color-text-tertiary)}
+.cw{background:var(--color-background-primary);border:0.5px solid var(--color-border-tertiary);border-radius:var(--border-radius-md);overflow:hidden}
+canvas{display:block;width:100%;height:220px}
+
+/* info cards bottom */
+.info-row{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.ic{background:var(--color-background-primary);border:0.5px solid var(--color-border-secondary);border-radius:var(--border-radius-lg);padding:1rem}
+.ic-title{font-size:12px;text-transform:uppercase;letter-spacing:.08em;color:var(--color-text-tertiary);font-family:var(--font-mono);margin-bottom:5px}
+.ic-val{font-size:14px;color:var(--color-text-primary);line-height:1.55}
+.pro-box{background:var(--lf2);border:0.5px solid var(--lc2);border-radius:var(--border-radius-md);padding:10px 12px;font-size:14px;line-height:1.55}
+.pro-head{font-family:var(--font-mono);font-size:11px;text-transform:uppercase;font-weight:700;color:var(--lc2);margin-bottom:4px}
+@media(prefers-color-scheme:dark){.pro-box{color:var(--lt2)}}
+
+.footer{text-align:center;margin-top:14px;font-size:14px;color:var(--color-text-tertiary);font-family:var(--font-mono)}
+</style>
+</head>
+<body>
+
+<div class="page-header">
+  <div class="page-kicker">Vermittlungsschicht · OSI Layer 3 · RFC 4291 · SS 2026</div>
+  <div class="page-title">IPv6 Adresskategorien</div>
+  <div class="page-sub">Unicast · Multicast · Anycast — Präfixe, Pakete und Zustellverhalten</div>
+</div>
+
+<div class="main">
+
+  <!-- ═══ LEFT: Category tree ═══ -->
+  <div class="cat-panel">
+    <div class="sec-label">Adresskategorien</div>
+
+    <!-- UNICAST -->
+    <div class="cat-group">
+      <div class="cat-head sel" id="ch-uni" style="color:var(--cu)" onclick="selCat('uni',this)">
+        <span class="cat-icon">🎯</span>
+        <span class="cat-name">Unicast</span>
+      </div>
+      <button class="sub-btn sel" id="sb-global" style="color:var(--cu)" onclick="selSub('global',this)">
+        <span class="sub-dot" style="background:var(--cu)"></span>Global Unicast<span class="cat-pfx">2000::/3</span>
+      </button>
+      <button class="sub-btn" id="sb-link" style="color:var(--cu)" onclick="selSub('link',this)">
+        <span class="sub-dot" style="background:var(--cu)"></span>Link-Local<span class="cat-pfx">fe80::/10</span>
+      </button>
+      <button class="sub-btn" id="sb-loop" style="color:var(--cu)" onclick="selSub('loop',this)">
+        <span class="sub-dot" style="background:var(--cu)"></span>Loopback<span class="cat-pfx">::1/128</span>
+      </button>
+      <button class="sub-btn" id="sb-unspec" style="color:var(--cu)" onclick="selSub('unspec',this)">
+        <span class="sub-dot" style="background:var(--cu)"></span>Unspecified<span class="cat-pfx">::/128</span>
+      </button>
+    </div>
+
+    <!-- MULTICAST -->
+    <div class="cat-group">
+      <div class="cat-head" id="ch-mcast" style="color:var(--cm)" onclick="selCat('mcast',this)">
+        <span class="cat-icon">📢</span>
+        <span class="cat-name">Multicast</span>
+      </div>
+      <button class="sub-btn" id="sb-mc-node" style="color:var(--cm)" onclick="selSub('mc-node',this)">
+        <span class="sub-dot" style="background:var(--cm)"></span>Knotenlokal<span class="cat-pfx">ff01::</span>
+      </button>
+      <button class="sub-btn" id="sb-mc-link" style="color:var(--cm)" onclick="selSub('mc-link',this)">
+        <span class="sub-dot" style="background:var(--cm)"></span>Linklokal<span class="cat-pfx">ff02::</span>
+      </button>
+      <button class="sub-btn" id="sb-mc-site" style="color:var(--cm)" onclick="selSub('mc-site',this)">
+        <span class="sub-dot" style="background:var(--cm)"></span>Sitelokal<span class="cat-pfx">ff05::</span>
+      </button>
+      <button class="sub-btn" id="sb-mc-glob" style="color:var(--cm)" onclick="selSub('mc-glob',this)">
+        <span class="sub-dot" style="background:var(--cm)"></span>Global<span class="cat-pfx">ff0e::</span>
+      </button>
+    </div>
+
+    <!-- ANYCAST -->
+    <div class="cat-group">
+      <div class="cat-head" id="ch-any" style="color:var(--ca)" onclick="selCat('any',this)">
+        <span class="cat-icon">⚡</span>
+        <span class="cat-name">Anycast</span>
+      </div>
+      <button class="sub-btn" id="sb-any" style="color:var(--ca)" onclick="selSub('any',this)">
+        <span class="sub-dot" style="background:var(--ca)"></span>Nächster Knoten<span class="cat-pfx">Unicast-Raum</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- ═══ RIGHT ═══ -->
+  <div class="right">
+
+    <!-- Address visualizer -->
+    <div class="addr-panel" id="addr-panel">
+      <div class="addr-title" id="a-title"></div>
+      <div class="addr-sub" id="a-sub"></div>
+
+      <div class="addr-block">
+        <div class="addr-label">128-Bit-Adresse (8 × 16-Bit-Gruppen)</div>
+        <div class="addr-groups" id="addr-groups"></div>
+        <div class="addr-legend" id="addr-legend"></div>
+      </div>
+
+      <!-- prefix bit breakdown -->
+      <div id="prefix-explain" style="background:var(--color-background-primary);border:0.5px solid var(--color-border-tertiary);border-radius:var(--border-radius-md);padding:12px 14px;margin-bottom:10px">
+        <div style="font-size:12px;text-transform:uppercase;letter-spacing:.08em;color:var(--color-text-tertiary);font-family:var(--font-mono);margin-bottom:8px">Präfix-Aufbau</div>
+        <div id="pfx-vis" style="display:flex;gap:4px;flex-wrap:wrap"></div>
+        <div id="pfx-desc" style="font-size:14px;color:var(--color-text-secondary);margin-top:8px;line-height:1.55"></div>
+      </div>
+
+      <div class="info-row" id="info-cards"></div>
+    </div>
+
+    <!-- Animation -->
+    <div class="anim-panel">
+      <div class="ctrl-row">
+        <button class="cbtn go" onclick="startAnim()">▶ Paket senden</button>
+        <button class="cbtn" onclick="stopAnim()">⏹ Stop</button>
+        <span class="status" id="status">Kategorie wählen → Animation starten</span>
+      </div>
+      <div class="cw"><canvas id="c" height="220"></canvas></div>
+    </div>
+
+  </div>
+</div>
+
+<div class="footer">IPv6 Adresskategorien · RFC 4291 · SS 2026 · Christian Böttger M.Sc.</div>
+
+<script>
+/* ══════════════════════════════════
+   DATA
+══════════════════════════════════ */
+const CSS = n => getComputedStyle(document.documentElement).getPropertyValue(n).trim();
+const BG  = ()=>CSS('--color-background-primary');
+const BG2 = ()=>CSS('--color-background-secondary');
+const BRD = ()=>CSS('--color-border-secondary');
+const TXT = ()=>CSS('--color-text-primary');
+const TXT2= ()=>CSS('--color-text-secondary');
+const TXT3= ()=>CSS('--color-text-tertiary');
+const CU  = ()=>CSS('--cu');
+const CM  = ()=>CSS('--cm');
+const CA  = ()=>CSS('--ca');
+const CU_B= ()=>CSS('--cu-bg');
+const CM_B= ()=>CSS('--cm-bg');
+const CA_B= ()=>CSS('--ca-bg');
+
+const SUBS = {
+  // UNICAST
+  global:{
+    cat:'uni', col:CU, bg:CU_B,
+    title:'Global Unicast', en:'Globally routable IPv6 address',
+    prefix:'2000::', prefixLen:3,
+    addr:['2001','0db8','85a3','08d3','1319','8a2e','0370','7344'],
+    groups:[
+      {range:[0,3], label:'Präfix 001 (3 bit)', note:'Fest: 001'},
+      {range:[3,47],label:'Global Routing Prefix (45 bit)',note:'ISP/Provider-Zuweisung'},
+      {range:[47,63],label:'Subnet ID (16 bit)',note:'Subnetze im Unternehmen'},
+      {range:[63,127],label:'Interface ID (64 bit)',note:'Gerätekennzeichnung (EUI-64 od. SLAAC)'},
+    ],
+    pfxDesc:'Die ersten 3 Bit sind immer <strong>001</strong>. Zusammen mit den folgenden 45 Bit bilden sie das Global Routing Prefix — zugewiesen von IANA → RIR → ISP → Endkunde.',
+    prinzip:'1 Sender → 1 Empfänger',
+    einsatz:'Öffentlich routbare Internetadressen',
+    scope:'Global — weltweit eindeutig',
+    beispiel:'2001:0db8:85a3::1',
+    animKey:'unicast',
+  },
+  link:{
+    cat:'uni', col:CU, bg:CU_B,
+    title:'Link-Local Unicast', en:'Link-scoped unicast address',
+    prefix:'fe80::', prefixLen:10,
+    addr:['fe80','0000','0000','0000','0217','f2ff','feb5','a9c3'],
+    groups:[
+      {range:[0,9], label:'Präfix fe80::/10', note:'Fest: 1111111010'},
+      {range:[9,63],label:'Immer 0 (54 bit)', note:'Nullbits'},
+      {range:[63,127],label:'Interface ID (64 bit)',note:'EUI-64 oder Zufallswert'},
+    ],
+    pfxDesc:'Die ersten 10 Bit sind fest: <strong>1111 1110 10</strong> (fe80 – febf). Wird automatisch konfiguriert — kein DHCP oder manuelles Eingreifen nötig.',
+    prinzip:'Nur im lokalen Link gültig',
+    einsatz:'Nachbarschaftsprotokoll (NDP), Router Discovery',
+    scope:'Link-local — nicht routbar',
+    beispiel:'fe80::217:f2ff:feb5:a9c3',
+    animKey:'unicast',
+  },
+  loop:{
+    cat:'uni', col:CU, bg:CU_B,
+    title:'Loopback', en:'Loopback address (≙ 127.0.0.1 in IPv4)',
+    prefix:'::1', prefixLen:128,
+    addr:['0000','0000','0000','0000','0000','0000','0000','0001'],
+    groups:[
+      {range:[0,126], label:'127 × Nullbit', note:'Alles 0'},
+      {range:[127,127],label:'1 Bit (1)', note:'Letztes Bit = 1'},
+    ],
+    pfxDesc:'Exakt <strong>::1</strong> — 127 Nullbits gefolgt von einem 1-Bit. Entspricht 127.0.0.1 in IPv4. Pakete verlassen nie die Netzwerkschicht.',
+    prinzip:'Gerät spricht mit sich selbst',
+    einsatz:'Lokale Dienste testen, Loopback-Interface',
+    scope:'Knotenlokal',
+    beispiel:'::1',
+    animKey:'loopback',
+  },
+  unspec:{
+    cat:'uni', col:CU, bg:CU_B,
+    title:'Unspecified Address', en:'Noch keine Adresse zugewiesen',
+    prefix:'::', prefixLen:128,
+    addr:['0000','0000','0000','0000','0000','0000','0000','0000'],
+    groups:[
+      {range:[0,127], label:'128 × Nullbit', note:'Alles 0'},
+    ],
+    pfxDesc:'Alle 128 Bit sind <strong>0</strong> — geschrieben als <strong>::</strong>. Wird als Quelladresse verwendet, wenn ein Gerät noch keine IPv6-Adresse hat (z. B. beim DHCP-Boot).',
+    prinzip:'Platzhalter — keine gültige Quelle',
+    einsatz:'Quelladresse bei DHCP-Anfrage, SLAAC-Start',
+    scope:'Nicht routbar',
+    beispiel:'::',
+    animKey:'loopback',
+  },
+  // MULTICAST
+  'mc-node':{
+    cat:'mcast', col:CM, bg:CM_B,
+    title:'Multicast — Knotenlokal', en:'Node-local multicast (ffx1::)',
+    prefix:'ff01::', prefixLen:16,
+    addr:['ff01','0000','0000','0000','0000','0000','0000','0001'],
+    groups:[
+      {range:[0,7], label:'ff (8 bit)', note:'Präfix ff = Multicast'},
+      {range:[8,11],label:'Flags (4 bit)', note:'0=permanent, 1=temporär'},
+      {range:[12,15],label:'Scope 1 (4 bit)', note:'Knotenlokal'},
+      {range:[16,127],label:'Gruppen-ID (112 bit)', note:'Multicast-Gruppe'},
+    ],
+    pfxDesc:'Präfix <strong>ff</strong> (1111 1111) zeigt immer Multicast an. Die 4 Scope-Bits geben den Gültigkeitsbereich an: <strong>1 = knotenlokal</strong> — das Paket verlässt das Gerät nicht.',
+    prinzip:'1 Sender → gesamte Multicast-Gruppe',
+    einsatz:'Alle Schnittstellen desselben Knotens',
+    scope:'Knotenlokal (bleibt im Gerät)',
+    beispiel:'ff01::1 (alle Knoten, knotenlokal)',
+    animKey:'multicast-node',
+  },
+  'mc-link':{
+    cat:'mcast', col:CM, bg:CM_B,
+    title:'Multicast — Linklokal', en:'Link-local multicast (ffx2::)',
+    prefix:'ff02::', prefixLen:16,
+    addr:['ff02','0000','0000','0000','0000','0000','0000','0001'],
+    groups:[
+      {range:[0,7], label:'ff (8 bit)', note:'Präfix ff = Multicast'},
+      {range:[8,11],label:'Flags (4 bit)', note:'0=permanent'},
+      {range:[12,15],label:'Scope 2 (4 bit)', note:'Linklokal'},
+      {range:[16,127],label:'Gruppen-ID (112 bit)', note:'Multicast-Gruppe'},
+    ],
+    pfxDesc:'Scope-Bits = <strong>2 → linklokal</strong>. Das Paket wird an alle Gruppen-Mitglieder im selben Link (Segment) gesendet, aber nicht über Router hinaus. Sehr häufig: ff02::1 = alle Knoten, ff02::2 = alle Router.',
+    prinzip:'1 Sender → alle Gruppenmitglieder im Link',
+    einsatz:'NDP, Router Solicitation/Advertisement, MLD',
+    scope:'Linklokal (nicht geroutet)',
+    beispiel:'ff02::1 alle Knoten  /  ff02::2 alle Router',
+    animKey:'multicast-link',
+  },
+  'mc-site':{
+    cat:'mcast', col:CM, bg:CM_B,
+    title:'Multicast — Sitelokal', en:'Site-local multicast (ffx5::)',
+    prefix:'ff05::', prefixLen:16,
+    addr:['ff05','0000','0000','0000','0000','0000','0000','00fb'],
+    groups:[
+      {range:[0,7], label:'ff (8 bit)', note:'Präfix ff = Multicast'},
+      {range:[8,11],label:'Flags (4 bit)', note:'0=permanent'},
+      {range:[12,15],label:'Scope 5 (4 bit)', note:'Sitelokal'},
+      {range:[16,127],label:'Gruppen-ID (112 bit)', note:'z. B. mDNS'},
+    ],
+    pfxDesc:'Scope = <strong>5 → sitelokal</strong> — das gesamte Unternehmen oder Gelände. Router leiten weiter, solange sie innerhalb der Site-Grenze bleiben.',
+    prinzip:'1 Sender → alle Gruppen-Mitglieder der Site',
+    einsatz:'Unternehmensweite Multicast-Dienste, mDNS',
+    scope:'Sitelokal (im Unternehmen)',
+    beispiel:'ff05::fb (mDNS sitelokal)',
+    animKey:'multicast-site',
+  },
+  'mc-glob':{
+    cat:'mcast', col:CM, bg:CM_B,
+    title:'Multicast — Global', en:'Global multicast (ffxe::)',
+    prefix:'ff0e::', prefixLen:16,
+    addr:['ff0e','0000','0000','0000','0000','0000','0000','0001'],
+    groups:[
+      {range:[0,7], label:'ff (8 bit)', note:'Präfix ff = Multicast'},
+      {range:[8,11],label:'Flags (4 bit)', note:'0=permanent'},
+      {range:[12,15],label:'Scope e (4 bit)', note:'Global'},
+      {range:[16,127],label:'Gruppen-ID (112 bit)', note:'Weltweit eindeutige Gruppe'},
+    ],
+    pfxDesc:'Scope = <strong>e → global</strong>. Pakete werden weltweit an alle Gruppen-Mitglieder geroutet — setzt Multicast-Routing (PIM) im Internet voraus.',
+    prinzip:'1 Sender → globale Multicast-Gruppe weltweit',
+    einsatz:'Internet-TV, globale Multicast-Dienste',
+    scope:'Global — weltweit routbar',
+    beispiel:'ff0e::1 (alle Knoten, global)',
+    animKey:'multicast-global',
+  },
+  // ANYCAST
+  any:{
+    cat:'any', col:CA, bg:CA_B,
+    title:'Anycast', en:'Nearest-node delivery',
+    prefix:'(Unicast-Raum)', prefixLen:null,
+    addr:['2001','0db8','0000','0000','0000','0000','0000','0001'],
+    groups:[
+      {range:[0,63], label:'Netz-Präfix (identisch)', note:'Gruppe teilt denselben Präfix'},
+      {range:[63,127],label:'Interface-ID (64 bit)', note:'Knotenspezifisch'},
+    ],
+    pfxDesc:'Anycast hat kein eigenes Präfix. Die Adresse sieht wie eine normale Unicast-Adresse aus — mehrere Knoten sind mit derselben Adresse konfiguriert. Der Router sendet an den <strong>nächstgelegenen</strong> Knoten (nach Routing-Metrik).',
+    prinzip:'1 Sender → nächster von N möglichen Empfängern',
+    einsatz:'DNS-Anycast (z. B. 8.8.8.8), CDN, Anycast-Router',
+    scope:'Global — jeder Router entscheidet',
+    beispiel:'2001:db8::1 (auf 3 Servern konfiguriert)',
+    animKey:'anycast',
+  },
+};
+
+/* ══════════════════════════════════
+   SELECTION
+══════════════════════════════════ */
+let currentSub = 'global';
+let animId = null, animT = 0;
+
+function selCat(cat, el) {
+  const first = {uni:'global', mcast:'mc-link', any:'any'}[cat];
+  selSub(first, document.getElementById('sb-'+first) || document.querySelector('.sub-btn'));
+}
+
+function selSub(id, btn) {
+  currentSub = id;
+  document.querySelectorAll('.cat-head').forEach(e=>e.classList.remove('sel'));
+  document.querySelectorAll('.sub-btn').forEach(e=>e.classList.remove('sel'));
+  const d = SUBS[id];
+  document.getElementById('ch-'+d.cat).classList.add('sel');
+  const sbId = 'sb-'+id;
+  const sbEl = document.getElementById(sbId);
+  if(sbEl) sbEl.classList.add('sel');
+  stopAnim();
+  renderDetail(d);
+}
+
+function renderDetail(d) {
+  const col = d.col(), bg = d.bg();
+  // title
+  document.getElementById('a-title').textContent = d.title;
+  document.getElementById('a-title').style.color = col;
+  document.getElementById('a-sub').textContent = d.en;
+
+  // address groups
+  const gc = document.getElementById('addr-groups');
+  gc.innerHTML = '';
+  const bitRanges = d.groups.map(g=>({...g, color: col, start: g.range[0], end: g.range[1]}));
+
+  d.addr.forEach((hex, i) => {
+    const bitStart = i*16, bitEnd = bitStart+15;
+    // find which group this belongs to
+    const grp = bitRanges.find(g => bitStart >= g.start && bitEnd <= g.end+1);
+    const isPrefix = grp && grp.range[0] === d.groups[0].range[0];
+
+    // which group index
+    let grpIdx = d.groups.findIndex(g => bitStart >= g.range[0] && bitEnd <= g.range[1]+1);
+    const grpColors = [col, '#3B6D11','#854F0B','#534AB7','#0F6E56'];
+    const grpBgs = [bg, '#EAF3DE','#FAEEDA','#EEEDFE','#E1F5EE'];
+    const c2 = grpColors[grpIdx] || col;
+    const b2 = grpBgs[grpIdx] || bg;
+
+    const div = document.createElement('div');
+    div.className = 'ag';
+    div.innerHTML = `
+      <div class="ag-hex" style="background:${b2};color:${c2};border-color:${c2}44">${hex}</div>
+      <div class="ag-bit">×16b</div>`;
+    gc.appendChild(div);
+  });
+
+  // legend
+  const lc = document.getElementById('addr-legend');
+  lc.innerHTML = '';
+  const grpColors2 = [col, '#3B6D11','#854F0B','#534AB7','#0F6E56'];
+  d.groups.forEach((g,i) => {
+    const item = document.createElement('div');
+    item.className = 'leg-item';
+    item.innerHTML = `<div class="leg-dot" style="background:${grpColors2[i]||col}"></div>${g.label}`;
+    lc.appendChild(item);
+  });
+
+  // prefix explain
+  document.getElementById('pfx-desc').innerHTML = d.pfxDesc;
+  // prefix visual
+  const pv = document.getElementById('pfx-vis');
+  pv.innerHTML = '';
+  const totalBits = 128;
+  const pfxLen = d.prefixLen || 48;
+  const bits = [
+    {len: pfxLen,          label: d.prefix || 'Präfix', color: col,   bg: bg},
+    {len: 64-Math.min(pfxLen,64), label: 'Subnetz/Routing', color:'#854F0B', bg:'#FAEEDA'},
+    {len: 64,              label: 'Interface ID (64 bit)', color:'#534AB7', bg:'#EEEDFE'},
+  ].filter(b=>b.len>0);
+  bits.forEach(b => {
+    const w = Math.max(b.len/128*100, 8);
+    const div = document.createElement('div');
+    div.style.cssText=`flex:${b.len};min-width:${w}px;padding:6px 6px;border-radius:4px;background:${b.bg};border:0.5px solid ${b.color};text-align:center`;
+    div.innerHTML=`<div style="font-size:10px;font-weight:700;font-family:var(--font-mono);color:${b.color}">${b.label}</div><div style="font-size:10px;color:${b.color};font-family:var(--font-mono)">${b.len} bit</div>`;
+    pv.appendChild(div);
+  });
+
+  // info cards
+  document.getElementById('info-cards').innerHTML = `
+    <div class="ic"><div class="ic-title">Prinzip</div><div class="ic-val">${d.prinzip}</div></div>
+    <div class="ic"><div class="ic-title">Scope</div><div class="ic-val">${d.scope}</div></div>
+    <div class="ic"><div class="ic-title">Einsatz</div><div class="ic-val">${d.einsatz}</div></div>
+    <div class="ic"><div class="ic-title">Beispiel</div><div class="ic-val" style="font-family:var(--font-mono);font-size:13px;color:${col}">${d.beispiel}</div></div>`;
+}
+
+/* ══════════════════════════════════
+   CANVAS ANIMATIONS
+══════════════════════════════════ */
+const W_C = () => document.getElementById('c').clientWidth;
+const H_C = 220;
+
+function prepC() {
+  const c = document.getElementById('c');
+  c.width = c.clientWidth * devicePixelRatio;
+  c.height = H_C * devicePixelRatio;
+  const x = c.getContext('2d');
+  x.scale(devicePixelRatio, devicePixelRatio);
+  x.fillStyle = BG();
+  x.fillRect(0,0,W_C(),H_C);
+  return [x, W_C(), H_C];
+}
+
+// Node drawing
+function drawNode(x, cx, cy, r, col, label, sub='', active=false) {
+  x.fillStyle = active ? col : BG2();
+  x.strokeStyle = col; x.lineWidth = active ? 2.5 : 1.5;
+  x.beginPath(); x.arc(cx, cy, r, 0, Math.PI*2); x.fill(); x.stroke();
+  x.font = `700 12px var(--font-mono)`;
+  x.fillStyle = active ? '#fff' : col;
+  x.textAlign = 'center'; x.fillText(label, cx, cy+4);
+  if(sub) {
+    x.font = `11px var(--font-sans)`;
+    x.fillStyle = TXT3(); x.fillText(sub, cx, cy+r+14);
+  }
+}
+
+function drawPacket(x, px, py, col, label='') {
+  x.shadowBlur=10; x.shadowColor=col;
+  x.fillStyle=col; x.beginPath(); x.arc(px,py,9,0,Math.PI*2); x.fill();
+  x.shadowBlur=0;
+  if(label){x.font='700 9px var(--font-mono)';x.fillStyle='#fff';x.textAlign='center';x.fillText(label,px,py+3);}
+}
+
+function drawWire(x, x1,y1,x2,y2, col, dashed=false) {
+  x.strokeStyle=col; x.lineWidth=1.5;
+  x.setLineDash(dashed?[5,4]:[]);
+  x.globalAlpha=0.4;
+  x.beginPath();x.moveTo(x1,y1);x.lineTo(x2,y2);x.stroke();
+  x.setLineDash([]);x.globalAlpha=1;
+}
+
+function routerShape(x, cx, cy, col) {
+  x.fillStyle=BG2(); x.strokeStyle=col; x.lineWidth=2;
+  x.beginPath();x.arc(cx,cy,18,0,Math.PI*2);x.fill();x.stroke();
+  x.font='700 10px var(--font-mono)';x.fillStyle=col;x.textAlign='center';
+  x.fillText('RTR',cx,cy+3);
+}
+
+/* ── Animation draw functions ── */
+const ANIMS = {
+
+  unicast(x, W, H, t, col) {
+    const srcX=60, srcY=H/2, dstX=W-60, dstY=H/2;
+    const routX=W/2, routY=H/2;
+    // router
+    drawWire(x,srcX,srcY,routX,routY,col);
+    drawWire(x,routX,routY,dstX,dstY,col);
+    routerShape(x, routX, routY, col);
+    // nodes
+    drawNode(x,srcX,srcY,22,col,'SRC','Sender');
+    drawNode(x,dstX,dstY,22,col,'DST','Empfänger','',(t%80)>40);
+    // packet
+    const prog = (t%80)/80;
+    const px = srcX+(dstX-srcX)*prog, py=H/2;
+    drawPacket(x,px,py,col);
+    // label
+    x.font='600 13px var(--font-sans)';x.fillStyle=col;x.textAlign='center';
+    x.fillText('1 Sender  →  1 Empfänger',W/2,H-12);
+    document.getElementById('status').textContent='Paket wird an genau einen Empfänger gesendet';
+  },
+
+  loopback(x, W, H, t, col) {
+    const CX=W/2, CY=H/2;
+    // Self-loop arc
+    x.strokeStyle=col; x.lineWidth=2; x.globalAlpha=0.5;
+    x.beginPath(); x.arc(CX, CY-10, 55, 0.3, Math.PI-0.3); x.stroke();
+    x.globalAlpha=1;
+    drawNode(x,CX,CY,28,col,'NODE','Loopback-Gerät');
+    // animated packet on arc
+    const prog = (t%60)/60;
+    const ang = 0.3 + prog*(Math.PI-0.6);
+    const px = CX+55*Math.cos(ang), py=(CY-10)+55*Math.sin(ang);
+    drawPacket(x,px,py,col,'::1');
+    x.font='600 13px var(--font-sans)';x.fillStyle=col;x.textAlign='center';
+    x.fillText('Paket verlässt das Gerät nicht',W/2,H-12);
+    document.getElementById('status').textContent='Loopback — Paket geht an sich selbst';
+  },
+
+  'multicast-node'(x, W, H, t, col) {
+    const CX=W/2, CY=H/2+10;
+    drawNode(x,CX,CY-70,22,col,'SRC','Sender');
+    // single node (stays local)
+    drawWire(x,CX,CY-48,CX,CY-20,col);
+    drawNode(x,CX,CY,28,col,'NODE','Knotenlokal',(t%50)>25);
+    x.font='600 13px var(--font-sans)';x.fillStyle=col;x.textAlign='center';
+    x.fillText('Paket bleibt im Knoten',W/2,H-12);
+    const prog=(t%50)/50;
+    drawPacket(x,CX,CY-48+(28-(-48))*prog,col,'ff01');
+    document.getElementById('status').textContent='Scope 1: bleibt im Gerät — verlässt nie den Stack';
+  },
+
+  'multicast-link'(x, W, H, t, col) {
+    const srcX=W/2, srcY=40;
+    const dsts=[[W*.15,H*.75],[W*.38,H*.85],[W*.62,H*.85],[W*.85,H*.75]];
+    dsts.forEach(([dx,dy])=>drawWire(x,srcX,srcY,dx,dy,col,true));
+    drawNode(x,srcX,srcY,22,col,'SRC','Sender');
+    const prog=(t%70)/70;
+    dsts.forEach(([dx,dy],i)=>{
+      const active=prog>(i*0.15)&&prog<1;
+      drawNode(x,dx,dy,18,col,`G${i+1}`,'',active);
+      if(active){
+        const p2=Math.max(0,(prog-i*0.12)/0.7);
+        drawPacket(x,srcX+(dx-srcX)*p2, srcY+(dy-srcY)*p2, col,'ff02');
+      }
+    });
+    x.font='600 13px var(--font-sans)';x.fillStyle=col;x.textAlign='center';
+    x.fillText('Alle Gruppen-Mitglieder im Link empfangen',W/2,H-12);
+    document.getElementById('status').textContent='ff02:: — Linklokal: alle Knoten im selben Segment';
+  },
+
+  'multicast-site'(x, W, H, t, col) {
+    const srcX=W/2, srcY=35;
+    // routers between src and dst groups
+    const r1=[W*.28,H/2], r2=[W*.72,H/2];
+    drawWire(x,srcX,srcY,r1[0],r1[1],col);
+    drawWire(x,r1[0],r1[1],r2[0],r2[1],col);
+    routerShape(x,r1[0],r1[1],col);
+    routerShape(x,r2[0],r2[1],col);
+    const dsts=[[W*.08,H*.82],[W*.22,H*.82],[W*.78,H*.82],[W*.92,H*.82]];
+    dsts.slice(0,2).forEach(([dx,dy])=>drawWire(x,r1[0],r1[1],dx,dy,col,true));
+    dsts.slice(2).forEach(([dx,dy])=>drawWire(x,r2[0],r2[1],dx,dy,col,true));
+    drawNode(x,srcX,srcY,20,col,'SRC','Sender');
+    dsts.forEach(([dx,dy],i)=>drawNode(x,dx,dy,16,col,`G${i+1}`,'',(t%80)>50));
+    const prog=(t%80)/80;
+    const px=srcX+(r1[0]-srcX)*Math.min(prog*3,1);
+    const py=srcY+(r1[1]-srcY)*Math.min(prog*3,1);
+    drawPacket(x,px,py,col,'ff05');
+    x.font='600 13px var(--font-sans)';x.fillStyle=col;x.textAlign='center';
+    x.fillText('Sitelokal — wird über interne Router weitergeleitet',W/2,H-12);
+    document.getElementById('status').textContent='ff05:: — Site-Scope: gesamtes Unternehmen / Gelände';
+  },
+
+  'multicast-global'(x, W, H, t, col) {
+    // Multiple routers representing internet backbone
+    const src=[W*.08,H/2];
+    const routers=[[W*.3,H*.35],[W*.5,H*.65],[W*.7,H*.35]];
+    const dsts=[[W*.88,H*.25],[W*.88,H*.55],[W*.88,H*.8]];
+    drawWire(x,src[0],src[1],routers[0][0],routers[0][1],col);
+    drawWire(x,routers[0][0],routers[0][1],routers[1][0],routers[1][1],col);
+    drawWire(x,routers[1][0],routers[1][1],routers[2][0],routers[2][1],col);
+    routers.forEach(([rx,ry])=>{drawWire(x,rx,ry,dsts[0][0],dsts[0][1],col,true);drawWire(x,rx,ry,dsts[1][0],dsts[1][1],col,true);drawWire(x,rx,ry,dsts[2][0],dsts[2][1],col,true);});
+    routers.forEach(([rx,ry])=>routerShape(x,rx,ry,col));
+    drawNode(x,src[0],src[1],20,col,'SRC','Internet');
+    dsts.forEach(([dx,dy],i)=>drawNode(x,dx,dy,16,col,`G${i+1}`,'',(t%90)>65));
+    const prog=Math.min((t%90)/90*2,1);
+    const ri=Math.min(Math.floor(prog*routers.length),routers.length-1);
+    const rp=(prog*routers.length)-ri;
+    const from=ri===0?src:routers[ri-1];
+    const to=routers[ri];
+    drawPacket(x,from[0]+(to[0]-from[0])*rp,from[1]+(to[1]-from[1])*rp,col,'ff0e');
+    x.font='600 13px var(--font-sans)';x.fillStyle=col;x.textAlign='center';
+    x.fillText('Global — weltweit über Multicast-Routing geroutet',W/2,H-12);
+    document.getElementById('status').textContent='ff0e:: — globaler Scope: Pakete traversieren das Internet';
+  },
+
+  anycast(x, W, H, t, col) {
+    const srcX=W*.1, srcY=H/2;
+    // 3 servers with same anycast address, different distances
+    const servers=[
+      {x:W*.72, y:H*.2, dist:2, label:'SRV A'},
+      {x:W*.9,  y:H*.5, dist:5, label:'SRV B'},
+      {x:W*.72, y:H*.8, dist:8, label:'SRV C'},
+    ];
+    const rtr={x:W*.45, y:H/2};
+    drawWire(x,srcX,srcY,rtr.x,rtr.y,col);
+    servers.forEach(s=>{
+      const isNearest=s.dist===2;
+      drawWire(x,rtr.x,rtr.y,s.x,s.y,col,!isNearest);
+      drawNode(x,s.x,s.y,20,col,s.label,`Hop: ${s.dist}`,isNearest&&(t%70>35));
+      if(!isNearest){
+        x.font='600 11px sans-serif';x.fillStyle=TXT3();x.textAlign='center';
+        x.fillText('✗',rtr.x+(s.x-rtr.x)*0.5,rtr.y+(s.y-rtr.y)*0.5);
+      }
+    });
+    routerShape(x,rtr.x,rtr.y,col);
+    drawNode(x,srcX,srcY,22,col,'SRC','Sender');
+    // packet travels to nearest
+    const prog=(t%70)/70;
+    const nearest=servers[0];
+    if(prog<0.4){
+      const p=prog/0.4;
+      drawPacket(x,srcX+(rtr.x-srcX)*p,srcY+(rtr.y-srcY)*p,col,'ANY');
+    } else {
+      const p=(prog-0.4)/0.6;
+      drawPacket(x,rtr.x+(nearest.x-rtr.x)*p,rtr.y+(nearest.y-rtr.y)*p,col,'ANY');
+    }
+    x.font='600 13px var(--font-sans)';x.fillStyle=col;x.textAlign='center';
+    x.fillText('Router sendet an den nächstgelegenen Knoten (Hop-Zahl)',W/2,H-12);
+    document.getElementById('status').textContent='Anycast: 3 Server, gleiche Adresse — Router wählt nächsten';
+  },
+};
+
+function startAnim() {
+  stopAnim();
+  animT=0;
+  const d = SUBS[currentSub];
+  function loop() {
+    const [x,W,H]=prepC();
+    const animFn = ANIMS[d.animKey];
+    if(animFn) animFn(x,W,H,animT,d.col());
+    animT++;
+    animId=requestAnimationFrame(loop);
+  }
+  animId=requestAnimationFrame(loop);
+}
+
+function stopAnim() {
+  if(animId){cancelAnimationFrame(animId);animId=null;}
+  const [x,W,H]=prepC();
+  x.font='600 16px var(--font-sans)';
+  x.fillStyle=TXT3();x.textAlign='center';
+  x.fillText('▶ Paket senden klicken',W/2,H/2);
+}
+
+/* ══ INIT ══ */
+selSub('global', document.getElementById('sb-global'));
+stopAnim();
+window.addEventListener('resize', ()=>{
+  if(!animId) stopAnim();
+});
+</script>
+</body>
+</html>

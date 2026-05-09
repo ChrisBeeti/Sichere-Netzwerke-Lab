@@ -58,8 +58,8 @@ body{font-family:var(--font-sans);background:var(--color-background-primary);col
 .page-title{font-size:34px;font-weight:600}
 .page-sub{font-size:17px;color:var(--color-text-secondary);margin-top:4px}
 
-.main{display:grid;grid-template-columns:1fr 300px;gap:16px;align-items:start}
-@media(max-width:820px){.main{grid-template-columns:1fr}}
+.main{display:grid;grid-template-columns:1fr 320px;gap:16px;align-items:start}
+@media(max-width:900px){.main{grid-template-columns:1fr}}
 
 .panel{background:var(--color-background-secondary);border:0.5px solid var(--color-border-tertiary);border-radius:var(--border-radius-lg);padding:1.25rem}
 .panel-white{background:var(--color-background-primary);border:0.5px solid var(--color-border-secondary);border-radius:var(--border-radius-lg);padding:1.25rem}
@@ -73,7 +73,7 @@ body{font-family:var(--font-sans);background:var(--color-background-primary);col
 
 /* ── CANVAS ── */
 .cw{background:var(--color-background-primary);border:0.5px solid var(--color-border-tertiary);border-radius:var(--border-radius-md);overflow:hidden;margin-bottom:10px}
-canvas{display:block;width:100%;height:260px}
+canvas{display:block;width:100%;height:480px}
 
 /* ── CTRL ROW ── */
 .ctrl-row{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:10px}
@@ -372,75 +372,71 @@ function renderStepCard(id) {
 function prepCanvas() {
   const c = document.getElementById('c');
   c.width  = c.clientWidth * devicePixelRatio;
-  c.height = 260 * devicePixelRatio;
+  c.height = 480 * devicePixelRatio;
   const x  = c.getContext('2d');
   x.scale(devicePixelRatio, devicePixelRatio);
   x.fillStyle = BG();
-  x.fillRect(0,0,c.clientWidth,260);
-  return [x, c.clientWidth, 260];
+  x.fillRect(0,0,c.clientWidth,480);
+  return [x, c.clientWidth, 480];
 }
 
 function drawDevice(x, cx, cy, label, sub, col, active=false, icon='') {
-  // Body rectangle
   x.fillStyle   = active ? cv('--lf3') : BG2();
   x.strokeStyle = active ? cv('--lc3') : BRD();
-  x.lineWidth   = active ? 2 : 1.5;
+  x.lineWidth   = active ? 3 : 2;
   x.beginPath();
-  const W=64, H=46;
-  x.roundRect(cx-W/2, cy-H/2, W, H, 6);
+  const W=96, H=68;
+  x.roundRect(cx-W/2, cy-H/2, W, H, 8);
   x.fill(); x.stroke();
-  // icon
-  x.font='22px sans-serif'; x.textAlign='center';
-  x.fillText(icon, cx, cy-2);
-  // label
-  x.font=`700 11px ${cv('--font-mono')}`;
+  x.font='32px sans-serif'; x.textAlign='center';
+  x.fillText(icon, cx, cy+4);
+  x.font=`700 14px ${cv('--font-mono')}`;
   x.fillStyle=active?cv('--lc3'):TXT();
-  x.fillText(label, cx, cy+20);
-  // sub
-  x.font=`11px ${cv('--font-sans')}`;
+  x.fillText(label, cx, cy+28);
+  x.font=`12px ${cv('--font-sans')}`;
   x.fillStyle=TXT3();
-  x.fillText(sub, cx, cy+H/2+16);
+  x.fillText(sub, cx, cy+H/2+20);
 }
 
 function drawArrow(x, x1,y1,x2,y2,col,label='',broadcast=false) {
-  // line
-  x.strokeStyle=col; x.lineWidth=2.5;
-  x.setLineDash(broadcast?[6,3]:[]);
+  x.strokeStyle=col; x.lineWidth=3;
+  x.setLineDash(broadcast?[8,4]:[]);
   x.beginPath(); x.moveTo(x1,y1); x.lineTo(x2,y2); x.stroke();
   x.setLineDash([]);
-  // arrowhead
   const ang=Math.atan2(y2-y1,x2-x1);
   x.fillStyle=col;
   x.beginPath();
   x.moveTo(x2,y2);
-  x.lineTo(x2-12*Math.cos(ang-0.35),y2-12*Math.sin(ang-0.35));
-  x.lineTo(x2-12*Math.cos(ang+0.35),y2-12*Math.sin(ang+0.35));
+  x.lineTo(x2-16*Math.cos(ang-0.35),y2-16*Math.sin(ang-0.35));
+  x.lineTo(x2-16*Math.cos(ang+0.35),y2-16*Math.sin(ang+0.35));
   x.fill();
-  // label
   if(label){
     const mx=(x1+x2)/2, my=(y1+y2)/2;
-    x.font=`700 12px ${cv('--font-mono')}`;
+    // label background pill
+    x.font=`700 14px ${cv('--font-mono')}`;
+    const tw=x.measureText(label).width;
+    x.fillStyle=BG();
+    x.beginPath(); x.roundRect(mx-tw/2-8,my-26,tw+16,22,5); x.fill();
     x.fillStyle=col;
     x.textAlign='center';
     x.fillText(label,mx,my-10);
     if(broadcast){
-      x.font=`10px ${cv('--font-mono')}`;
-      x.fillStyle=col;
-      x.globalAlpha=0.7;
-      x.fillText('Broadcast',mx,my+4);
+      x.font=`11px ${cv('--font-mono')}`;
+      x.fillStyle=col; x.globalAlpha=0.7;
+      x.fillText('Broadcast',mx,my+8);
       x.globalAlpha=1;
     }
   }
 }
 
 function drawPacket(x, px, py, col, label) {
-  x.shadowBlur=10; x.shadowColor=col;
+  x.shadowBlur=14; x.shadowColor=col;
   x.fillStyle=col;
-  x.beginPath(); x.arc(px,py,11,0,Math.PI*2); x.fill();
+  x.beginPath(); x.arc(px,py,16,0,Math.PI*2); x.fill();
   x.shadowBlur=0;
-  x.font=`700 9px ${cv('--font-mono')}`;
+  x.font=`700 11px ${cv('--font-mono')}`;
   x.fillStyle='#fff'; x.textAlign='center';
-  x.fillText(label, px, py+3);
+  x.fillText(label, px, py+4);
 }
 
 function drawBroadcastRings(x, cx, cy, t, col) {
@@ -459,83 +455,95 @@ function drawStep(stepId, t) {
   const s = STEPS.find(s=>s.id===stepId);
   if(!s) return;
 
-  const col=cv(s.col), bg=cv(s.bg);
-  const CLIENT_X=W*0.18, SERVER_X=W*0.82, MID_Y=H*0.48;
+  const col=cv(s.col);
+  const CLIENT_X=W*0.18, SERVER_X=W*0.82, MID_Y=H*0.52;
   const prog=(t%90)/90;
 
-  // Timeline labels
-  x.font=`600 12px ${cv('--font-mono')}`; x.textAlign='center'; x.fillStyle=TXT3();
-  x.fillText('DHCP CLIENT',CLIENT_X,H-14);
-  x.fillText('DHCP SERVER',SERVER_X,H-14);
+  // Column header labels
+  x.font=`700 15px ${cv('--font-mono')}`; x.textAlign='center'; x.fillStyle=TXT3();
+  x.fillText('DHCP CLIENT', CLIENT_X, 28);
+  x.fillText('DHCP SERVER', SERVER_X, 28);
 
   // Vertical timelines
-  [CLIENT_X,SERVER_X].forEach(lx=>{
-    x.strokeStyle=BRD(); x.lineWidth=1.5; x.setLineDash([4,3]);
-    x.beginPath(); x.moveTo(lx,32); x.lineTo(lx,H-30); x.stroke();
+  [CLIENT_X, SERVER_X].forEach(lx=>{
+    x.strokeStyle=BRD(); x.lineWidth=2; x.setLineDash([5,4]);
+    x.beginPath(); x.moveTo(lx,40); x.lineTo(lx,H-50); x.stroke();
     x.setLineDash([]);
   });
 
-  // Devices
-  drawDevice(x,CLIENT_X,50,'CLIENT','0.0.0.0',col,stepId==='ack','💻');
-  drawDevice(x,SERVER_X,50,'SERVER','192.168.1.1',col,false,'🖥');
+  // Devices at top
+  drawDevice(x, CLIENT_X, 90, 'CLIENT', '0.0.0.0', col, stepId==='ack', '💻');
+  drawDevice(x, SERVER_X, 90, 'SERVER', '192.168.1.1', col, false, '🖥');
 
-  // Completed arrows for previous steps (in complete mode drawn outside)
-  // Packet animation
+  // Broadcast rings at source if applicable
+  if(s.bcast) drawBroadcastRings(x, s.animDir==='c2s'?CLIENT_X:SERVER_X, MID_Y, t, col);
+
+  // Arrow
   const fromX = s.animDir==='c2s' ? CLIENT_X : SERVER_X;
   const toX   = s.animDir==='c2s' ? SERVER_X : CLIENT_X;
-  const py = MID_Y;
+  drawArrow(x, fromX, MID_Y, toX, MID_Y, col, s.name, s.bcast);
 
-  // draw static arrow
-  drawArrow(x,fromX,py,toX,py,col,s.name,s.bcast);
+  // Animated packet
+  const px = fromX+(toX-fromX)*prog;
+  drawPacket(x, px, MID_Y, col, s.id.slice(0,3).toUpperCase());
 
-  // broadcast rings at source
-  if(s.bcast) drawBroadcastRings(x,fromX,py,t,col);
+  // Step info at bottom
+  x.font=`700 15px ${cv('--font-sans')}`; x.textAlign='center'; x.fillStyle=col;
+  x.fillText(`${s.emoji}  ${s.title}`, W/2, H-50);
+  x.font=`13px ${cv('--font-sans')}`; x.fillStyle=TXT2();
+  x.fillText(s.dir, W/2, H-30);
 
-  // animated packet
-  const px=fromX+(toX-fromX)*prog;
-  drawPacket(x,px,py,col,s.id.slice(0,3).toUpperCase());
-
-  // step label at bottom
-  x.font=`600 13px ${cv('--font-sans')}`; x.textAlign='center'; x.fillStyle=col;
-  x.fillText(s.title+' — '+s.dir, W/2, H-30);
-
-  document.getElementById('status').textContent=s.name+': '+s.body.slice(0,60)+'…';
+  document.getElementById('status').textContent = s.name+': '+s.title;
 }
 
 /* ── Draw complete DORA animation ── */
 function drawAll(t) {
   const [x,W,H] = prepCanvas();
 
-  const CLIENT_X=W*0.14, SERVER_X=W*0.86;
-  const STEP_Y=[80,130,175,220]; // y positions for arrows
-  const TOTAL=STEPS.length*100;
-  const tt=t%TOTAL;
-  const stepIdx=Math.floor(tt/100);
-  const stepProg=(tt%100)/100;
+  const CLIENT_X=W*0.16, SERVER_X=W*0.84;
+  const TOP_Y = 80;   // device centres
+  const ARROW_START = 145; // first arrow y
+  const ARROW_GAP   = 64;  // gap between arrows
+  const STEP_Y = STEPS.map((_,i)=> ARROW_START + i*ARROW_GAP);
 
-  x.font=`700 13px ${cv('--font-mono')}`; x.textAlign='center'; x.fillStyle=TXT();
-  x.fillText('CLIENT',CLIENT_X,24); x.fillText('SERVER',SERVER_X,24);
+  const TOTAL=STEPS.length*90;
+  const tt=t%TOTAL;
+  const stepIdx=Math.floor(tt/90);
+  const stepProg=(tt%90)/90;
+
+  // Column labels
+  x.font=`700 16px ${cv('--font-mono')}`; x.textAlign='center'; x.fillStyle=TXT3();
+  x.fillText('DHCP CLIENT',CLIENT_X,26);
+  x.fillText('DHCP SERVER',SERVER_X,26);
 
   // Vertical timelines
   [CLIENT_X,SERVER_X].forEach(lx=>{
-    x.strokeStyle=BRD(); x.lineWidth=1.5; x.setLineDash([3,3]);
-    x.beginPath(); x.moveTo(lx,32); x.lineTo(lx,H-20); x.stroke();
+    x.strokeStyle=BRD(); x.lineWidth=2; x.setLineDash([5,4]);
+    x.beginPath(); x.moveTo(lx,38); x.lineTo(lx,H-30); x.stroke();
     x.setLineDash([]);
   });
 
-  // Draw completed arrows
+  // Devices
+  const isAckDone = stepIdx > 3 || (stepIdx===3 && stepProg>0.9);
+  drawDevice(x, CLIENT_X, TOP_Y, 'CLIENT', '0.0.0.0', cv('--lc4'), isAckDone, '💻');
+  drawDevice(x, SERVER_X, TOP_Y, 'SERVER', '192.168.1.1', cv('--lc4'), false, '🖥');
+
+  // Draw all completed arrows
   STEPS.forEach((s,i)=>{
     if(i>=stepIdx) return;
-    const col=cv(s.col), ay=STEP_Y[i]||90+i*45;
+    const col=cv(s.col), ay=STEP_Y[i];
     const fromX=s.animDir==='c2s'?CLIENT_X:SERVER_X;
     const toX  =s.animDir==='c2s'?SERVER_X:CLIENT_X;
     drawArrow(x,fromX,ay,toX,ay,col,s.name,s.bcast);
+    // step number label on left margin
+    x.font=`600 12px ${cv('--font-mono')}`; x.fillStyle=col; x.textAlign='right';
+    x.fillText(`${i+1}.`,CLIENT_X-52,ay+5);
   });
 
-  // Draw current arrow + animated packet
+  // Draw current animated arrow + packet
   if(stepIdx<STEPS.length){
     const s=STEPS[stepIdx];
-    const col=cv(s.col), ay=STEP_Y[stepIdx]||(90+stepIdx*45);
+    const col=cv(s.col), ay=STEP_Y[stepIdx];
     const fromX=s.animDir==='c2s'?CLIENT_X:SERVER_X;
     const toX  =s.animDir==='c2s'?SERVER_X:CLIENT_X;
     drawArrow(x,fromX,ay,toX,ay,col,s.name,s.bcast);
@@ -543,13 +551,26 @@ function drawAll(t) {
     const px=fromX+(toX-fromX)*stepProg;
     drawPacket(x,px,ay,col,s.name.replace('DHCP',''));
 
-    // highlight active step in dora list
+    // step number
+    x.font=`600 12px ${cv('--font-mono')}`; x.fillStyle=col; x.textAlign='right';
+    x.fillText(`${stepIdx+1}.`,CLIENT_X-52,ay+5);
+
+    // Update DORA list highlight
     document.querySelectorAll('.dora-item').forEach(e=>e.classList.remove('act'));
     const di=document.getElementById('di-'+s.id);
     if(di) di.classList.add('act');
 
     document.getElementById('status').textContent=`Schritt ${s.n}/5: ${s.name} — ${s.title}`;
   }
+
+  // Step labels on right side
+  STEPS.forEach((s,i)=>{
+    if(i>stepIdx) return;
+    const col=cv(s.col), ay=STEP_Y[i];
+    x.font=`13px ${cv('--font-sans')}`; x.fillStyle=col;
+    x.textAlign='left';
+    x.fillText(s.emoji+' '+s.title, SERVER_X+52, ay+5);
+  });
 }
 
 /* ══════════════════════════════════
@@ -570,7 +591,7 @@ function stopAnim(){
   if(animId){cancelAnimationFrame(animId);animId=null;}
   // draw static hint
   const [x,W,H]=prepCanvas();
-  x.font=`600 15px ${cv('--font-sans')}`; x.fillStyle=TXT3(); x.textAlign='center';
+  x.font=`600 16px ${cv('--font-sans')}`; x.fillStyle=TXT3(); x.textAlign='center';
   x.fillText('▶ Starten klicken für Animation',W/2,H/2);
 }
 

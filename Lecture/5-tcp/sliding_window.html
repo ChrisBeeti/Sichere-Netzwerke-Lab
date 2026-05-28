@@ -1,0 +1,733 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Sliding Window — FOM SS 2026</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --lc1:#854F0B;--lf1:#FAEEDA;--lt1:#633806;
+  --lc2:#3B6D11;--lf2:#EAF3DE;--lt2:#27500A;
+  --lc3:#0F6E56;--lf3:#E1F5EE;--lt3:#085041;
+  --lc4:#185FA5;--lf4:#E6F1FB;--lt4:#0C447C;
+  --lc6:#534AB7;--lf6:#EEEDFE;--lt6:#3C3489;
+  --color-background-primary:#fff;
+  --color-background-secondary:#f5f5f5;
+  --color-text-primary:#111;
+  --color-text-secondary:#555;
+  --color-text-tertiary:#888;
+  --color-border-primary:#bbb;
+  --color-border-secondary:#ddd;
+  --color-border-tertiary:#eee;
+  --border-radius-md:8px;
+  --border-radius-lg:12px;
+  --font-sans:system-ui,-apple-system,sans-serif;
+  --font-mono:'SF Mono',Consolas,monospace;
+}
+@media(prefers-color-scheme:dark){:root{
+  --lc1:#EF9F27;--lf1:#3d2200;--lt1:#FAEEDA;
+  --lc2:#97C459;--lf2:#1a3300;--lt2:#EAF3DE;
+  --lc3:#5DCAA5;--lf3:#003326;--lt3:#E1F5EE;
+  --lc4:#85B7EB;--lf4:#002966;--lt4:#E6F1FB;
+  --lc6:#AFA9EC;--lf6:#1e1966;--lt6:#EEEDFE;
+  --color-background-primary:#1a1a1a;
+  --color-background-secondary:#242424;
+  --color-text-primary:#f0f0f0;
+  --color-text-secondary:#aaa;
+  --color-text-tertiary:#666;
+  --color-border-primary:#444;
+  --color-border-secondary:#333;
+  --color-border-tertiary:#2a2a2a;
+}}
+
+body{font-family:var(--font-sans);background:var(--color-background-primary);color:var(--color-text-primary);padding:1.5rem 1rem 3rem}
+
+.page-header{text-align:center;margin-bottom:1.75rem}
+.page-kicker{font-size:14px;letter-spacing:.1em;text-transform:uppercase;color:var(--color-text-tertiary);margin-bottom:5px;font-family:var(--font-mono)}
+.page-title{font-size:34px;font-weight:600}
+.page-sub{font-size:17px;color:var(--color-text-secondary);margin-top:4px}
+
+/* View nav */
+.vnav{display:flex;gap:6px;flex-wrap:wrap;justify-content:center;margin-bottom:1.5rem}
+.vbtn{cursor:pointer;padding:9px 22px;border-radius:var(--border-radius-md);border:1px solid var(--color-border-secondary);background:transparent;color:var(--color-text-secondary);font-size:17px;font-family:var(--font-sans);transition:all .15s}
+.vbtn:hover{background:var(--color-background-secondary);color:var(--color-text-primary)}
+.vbtn.act{background:var(--color-background-secondary);border-color:var(--color-border-primary);color:var(--color-text-primary);font-weight:600}
+.view{display:none}.view.show{display:block}
+
+.panel{background:var(--color-background-secondary);border:0.5px solid var(--color-border-tertiary);border-radius:var(--border-radius-lg);padding:1.25rem}
+.panel-white{background:var(--color-background-primary);border:0.5px solid var(--color-border-secondary);border-radius:var(--border-radius-lg);padding:1.25rem}
+.sec-label{font-size:12px;letter-spacing:.1em;text-transform:uppercase;color:var(--color-text-tertiary);font-family:var(--font-mono);margin-bottom:10px}
+
+/* Controls */
+.ctrl-row{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:10px}
+.cbtn{cursor:pointer;padding:8px 20px;border-radius:var(--border-radius-md);border:1px solid var(--color-border-secondary);background:var(--color-background-primary);color:var(--color-text-secondary);font-size:15px;font-family:var(--font-sans);transition:all .15s;font-weight:500}
+.cbtn:hover{background:var(--color-background-secondary);color:var(--color-text-primary)}
+.cbtn.go{background:var(--lc3);color:#fff;border-color:var(--lc3);font-weight:700}
+.cbtn.step-btn{background:var(--lc4);color:#fff;border-color:var(--lc4)}
+.cbtn.reset-btn{border-color:var(--lc1);color:var(--lc1)}
+.status{font-family:var(--font-mono);font-size:14px;color:var(--color-text-secondary);flex:1}
+
+/* Slider */
+.slider-row{display:flex;align-items:center;gap:12px;margin-bottom:12px;flex-wrap:wrap}
+.slider-label{font-family:var(--font-mono);font-size:14px;color:var(--color-text-secondary);white-space:nowrap}
+input[type=range]{flex:1;min-width:120px;accent-color:var(--lc4)}
+.slider-val{font-family:var(--font-mono);font-size:16px;font-weight:700;color:var(--lc4);min-width:24px}
+
+/* Canvas */
+.cw{background:var(--color-background-primary);border:0.5px solid var(--color-border-tertiary);border-radius:var(--border-radius-md);overflow:hidden;margin-bottom:12px}
+canvas{display:block;width:100%}
+
+/* Legend */
+.legend{display:flex;gap:12px;flex-wrap:wrap;padding:10px 14px;background:var(--color-background-primary);border:0.5px solid var(--color-border-tertiary);border-radius:var(--border-radius-md)}
+.leg{display:flex;align-items:center;gap:6px;font-size:13px;color:var(--color-text-secondary)}
+.leg-box{width:20px;height:16px;border-radius:3px;flex-shrink:0}
+
+/* Info grid */
+.info-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:12px}
+.ic{background:var(--color-background-primary);border:0.5px solid var(--color-border-secondary);border-radius:var(--border-radius-lg);padding:1rem}
+.ic-title{font-family:var(--font-mono);font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:var(--color-text-tertiary);margin-bottom:4px}
+.ic-val{font-size:14px;color:var(--color-text-primary);line-height:1.55}
+
+/* Pointer diagram (V1 explainer) */
+.ptr-diagram{background:var(--color-background-primary);border:0.5px solid var(--color-border-tertiary);border-radius:var(--border-radius-md);padding:12px 14px;margin-top:10px}
+
+.footer{text-align:center;margin-top:14px;font-size:14px;color:var(--color-text-tertiary);font-family:var(--font-mono)}
+</style>
+</head>
+<body>
+
+<div class="page-header">
+  <div class="page-kicker">Transportschicht · TCP · RFC 793 · SS 2026</div>
+  <div class="page-title">Sliding Window</div>
+  <div class="page-sub">Flusskontrolle &amp; effiziente Bandbreitennutzung bei TCP</div>
+</div>
+
+<div class="vnav">
+  <button class="vbtn act" onclick="showView('v1',this)">① Sliding Window</button>
+  <button class="vbtn"     onclick="showView('v2',this)">② Paketverlust &amp; Go-Back-N</button>
+  <button class="vbtn"     onclick="showView('v3',this)">③ Flow Control Window</button>
+</div>
+
+<!-- ══════════════════════════════════
+     VIEW 1 — Sliding Window
+══════════════════════════════════ -->
+<div id="v1" class="view show">
+  <div class="panel">
+    <div class="sec-label">Interaktive Simulation — Fenstergröße anpassen, dann ▶ Starten</div>
+
+    <div class="slider-row">
+      <span class="slider-label">Fenstergröße:</span>
+      <input type="range" id="ws1" min="1" max="8" value="4" oninput="updateWs1()">
+      <span class="slider-val" id="ws1-val">4</span>
+      <span class="slider-label">Pakete</span>
+    </div>
+
+    <div class="ctrl-row">
+      <button class="cbtn go"       onclick="v1Start()">▶ Starten</button>
+      <button class="cbtn step-btn" onclick="v1Step()">→ Schritt</button>
+      <button class="cbtn reset-btn"onclick="v1Reset()">↺ Reset</button>
+      <span class="status" id="s1-status">Bereit — Wähle Fenstergröße und starte</span>
+    </div>
+
+    <div class="cw"><canvas id="c1" height="320"></canvas></div>
+
+    <div class="legend">
+      <div class="leg"><div class="leg-box" style="background:#ccc;border:1px solid #aaa"></div>Ungesendet</div>
+      <div class="leg"><div class="leg-box" style="background:#E6F1FB;border:1px solid #185FA5"></div>Im Fenster (kann gesendet werden)</div>
+      <div class="leg"><div class="leg-box" style="background:#EF9F27"></div>Unterwegs (unbestätigt)</div>
+      <div class="leg"><div class="leg-box" style="background:#EAF3DE;border:1px solid #3B6D11"></div>ACK erhalten ✓</div>
+    </div>
+
+    <div class="ptr-diagram" style="margin-top:10px">
+      <div class="sec-label">Drei Zeiger im Sender-Puffer</div>
+      <canvas id="c1-ptr" height="70"></canvas>
+    </div>
+
+    <div class="info-grid">
+      <div class="ic"><div class="ic-title">Prinzip</div><div class="ic-val">Sender darf mehrere Pakete senden, ohne auf jedes ACK zu warten — Anzahl = Fenstergröße.</div></div>
+      <div class="ic"><div class="ic-title">Effizienz</div><div class="ic-val">Ohne Sliding Window: <strong>Senden → Warten → Senden …</strong> Schlechte Leitungsauslastung bei hoher Latenz.</div></div>
+      <div class="ic"><div class="ic-title">Fenster verschiebt sich</div><div class="ic-val">Nach ACK für Paket N rückt das Fenster um 1 nach rechts — Paket N+WS wird freigegeben.</div></div>
+      <div class="ic"><div class="ic-title">Timer</div><div class="ic-val">Läuft nur für Pakete <em>im</em> Fenster. Kein ACK innerhalb der Zeit → Retransmission.</div></div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════
+     VIEW 2 — Paketverlust / Go-Back-N
+══════════════════════════════════ -->
+<div id="v2" class="view">
+  <div class="panel">
+    <div class="sec-label">Paketverlust — welches Paket soll verloren gehen?</div>
+
+    <div class="ctrl-row" style="flex-wrap:wrap;gap:8px">
+      <span class="slider-label" style="font-family:var(--font-mono);font-size:14px;color:var(--color-text-secondary)">Verlust bei Paket:</span>
+      <div id="loss-btns" style="display:flex;gap:6px;flex-wrap:wrap"></div>
+    </div>
+    <div class="ctrl-row">
+      <button class="cbtn go"       onclick="v2Start()">▶ Starten</button>
+      <button class="cbtn step-btn" onclick="v2Step()">→ Schritt</button>
+      <button class="cbtn reset-btn"onclick="v2Reset()">↺ Reset</button>
+      <span class="status" id="s2-status">Paket wählen → Starten</span>
+    </div>
+
+    <div class="cw"><canvas id="c2" height="460"></canvas></div>
+
+    <div class="legend">
+      <div class="leg"><div class="leg-box" style="background:#EF9F27"></div>Gesendet</div>
+      <div class="leg"><div class="leg-box" style="background:#EAF3DE;border:1px solid #3B6D11"></div>ACK ✓</div>
+      <div class="leg"><div class="leg-box" style="background:#fef0ee;border:1px solid #c0392b"></div>Verloren</div>
+      <div class="leg"><div class="leg-box" style="background:#EEEDFE;border:1px solid #534AB7"></div>Retransmission</div>
+    </div>
+
+    <div class="info-grid">
+      <div class="ic"><div class="ic-title">Go-Back-N</div><div class="ic-val">Nach Verlust eines Pakets werden <strong>alle nachfolgenden Pakete erneut gesendet</strong> — ab dem verlorenen Paket.</div></div>
+      <div class="ic"><div class="ic-title">ACK-Verhalten</div><div class="ic-val">Der Empfänger sendet für alle Pakete nach dem verlorenen Paket denselben ACK zurück: <strong>AckNr = SeqNr des verlorenen Pakets</strong>.</div></div>
+      <div class="ic"><div class="ic-title">Selective Repeat</div><div class="ic-val">Alternative: Nur das verlorene Paket erneut senden (SACK-Option im TCP-Header). Effizienter, aber komplexere Pufferverwaltung.</div></div>
+      <div class="ic"><div class="ic-title">Timer</div><div class="ic-val">Kein ACK innerhalb des Timeouts → Fenster wird zurückgesetzt, Retransmission ab verlorenem Paket.</div></div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════
+     VIEW 3 — Flow Control
+══════════════════════════════════ -->
+<div id="v3" class="view">
+  <div class="panel">
+    <div class="sec-label">Flow Control — Empfänger meldet Pufferfüllstand zurück</div>
+
+    <div class="ctrl-row">
+      <button class="cbtn go"       onclick="v3Start()">▶ Starten</button>
+      <button class="cbtn reset-btn"onclick="v3Reset()">↺ Reset</button>
+      <span class="status" id="s3-status">Bereit</span>
+    </div>
+
+    <div class="cw"><canvas id="c3" height="380"></canvas></div>
+
+    <div class="legend">
+      <div class="leg"><div class="leg-box" style="background:#E6F1FB;border:1px solid #185FA5"></div>Sendefenster</div>
+      <div class="leg"><div class="leg-box" style="background:#EAF3DE;border:1px solid #3B6D11"></div>Empfangspuffer frei</div>
+      <div class="leg"><div class="leg-box" style="background:#FAEEDA;border:1px solid #854F0B"></div>Empfangspuffer belegt</div>
+      <div class="leg"><div class="leg-box" style="background:#fef0ee;border:1px solid #c0392b"></div>Puffer voll — Fenster = 0</div>
+    </div>
+
+    <div class="info-grid">
+      <div class="ic"><div class="ic-title">Dynamische Fenstergröße</div><div class="ic-val">Jedes ACK enthält das aktuelle <strong>Receive Window (rwnd)</strong> des Empfängers — der Sender passt sein Fenster sofort an.</div></div>
+      <div class="ic"><div class="ic-title">Window = 0</div><div class="ic-val">Wenn der Empfangspuffer voll ist, setzt der Empfänger rwnd = 0. Der Sender pausiert und wartet auf einen <strong>Window Update</strong>.</div></div>
+      <div class="ic"><div class="ic-title">TCP-Header-Feld</div><div class="ic-val">Das <code style="font-family:var(--font-mono)">Window</code>-Feld im TCP-Header ist 16 Bit breit → max. 65.535 Byte (ohne Window Scale Option).</div></div>
+      <div class="ic"><div class="ic-title">Zweck</div><div class="ic-val">Verhindert Empfangspufferüberlauf beim Empfänger — unabhängig vom Congestion Window (Netzüberlastung).</div></div>
+    </div>
+  </div>
+</div>
+
+<div class="footer">Sliding Window · TCP RFC 793 · SS 2026 · Christian Böttger M.Sc.</div>
+
+<script>
+/* ══════════════════════════════════
+   HELPERS
+══════════════════════════════════ */
+const cv  = n => getComputedStyle(document.documentElement).getPropertyValue(n).trim();
+const BG  = ()=>cv('--color-background-primary');
+const BG2 = ()=>cv('--color-background-secondary');
+const BRD = ()=>cv('--color-border-secondary');
+const BRD3= ()=>cv('--color-border-tertiary');
+const TXT = ()=>cv('--color-text-primary');
+const TXT2= ()=>cv('--color-text-secondary');
+const TXT3= ()=>cv('--color-text-tertiary');
+const SF  = ()=>cv('--font-mono');
+
+function prepC(id, h) {
+  const c = document.getElementById(id);
+  c.height = h;
+  c.width  = c.clientWidth * devicePixelRatio;
+  c.height = h * devicePixelRatio;
+  const x  = c.getContext('2d');
+  x.scale(devicePixelRatio, devicePixelRatio);
+  x.fillStyle = BG();
+  x.fillRect(0, 0, c.clientWidth, h);
+  return [x, c.clientWidth, h];
+}
+
+/* ══════════════════════════════════
+   VIEW SWITCH
+══════════════════════════════════ */
+function showView(id, btn) {
+  document.querySelectorAll('.view').forEach(v=>v.classList.remove('show'));
+  document.querySelectorAll('.vbtn').forEach(b=>b.classList.remove('act'));
+  document.getElementById(id).classList.add('show');
+  btn.classList.add('act');
+  v1Reset(); v2Reset(); v3Reset();
+}
+
+/* ══════════════════════════════════
+   VIEW 1 — SLIDING WINDOW
+══════════════════════════════════ */
+const TOTAL_PKTS = 12;
+let v1WS = 4;
+let v1State = null; // {acked:int, windowStart:int, inFlight:{[n]:progress}}
+let v1AnimId = null, v1T = 0;
+let v1AutoPlay = false;
+
+function updateWs1() {
+  v1WS = parseInt(document.getElementById('ws1').value);
+  document.getElementById('ws1-val').textContent = v1WS;
+  v1Reset();
+}
+
+function v1Reset() {
+  v1AutoPlay = false;
+  if(v1AnimId){ cancelAnimationFrame(v1AnimId); v1AnimId=null; }
+  v1WS = parseInt(document.getElementById('ws1').value);
+  v1State = {
+    acked: 0,         // how many packets fully ACKed
+    windowStart: 0,   // left edge of window
+    sent: 0,          // how many sent so far
+    inFlight: [],     // [{n, progress, acking}]
+    ackQueue: [],     // ACK animations flying back
+  };
+  v1T = 0;
+  document.getElementById('s1-status').textContent = 'Bereit — Wähle Fenstergröße und starte';
+  drawV1();
+  drawV1Ptr();
+}
+
+function v1Start() { v1AutoPlay=true; v1Loop(); }
+
+function v1Step() {
+  v1AutoPlay = false;
+  if(v1AnimId){ cancelAnimationFrame(v1AnimId); v1AnimId=null; }
+  advanceV1();
+  drawV1();
+  drawV1Ptr();
+}
+
+function v1Loop() {
+  if(!v1AutoPlay) return;
+  v1T++;
+  // advance every 40 frames
+  if(v1T % 40 === 0) advanceV1();
+  drawV1();
+  drawV1Ptr();
+  if(v1State.acked < TOTAL_PKTS) {
+    v1AnimId = requestAnimationFrame(v1Loop);
+  } else {
+    document.getElementById('s1-status').textContent = '✓ Alle Pakete bestätigt — Übertragung abgeschlossen!';
+  }
+}
+
+function advanceV1() {
+  const s = v1State;
+  const ws = v1WS;
+  // Send new packets that fit in window
+  while(s.sent < Math.min(s.windowStart + ws, TOTAL_PKTS)) {
+    s.inFlight.push({n: s.sent, progress: 0, acking: false});
+    s.sent++;
+  }
+  // Advance in-flight packets
+  s.inFlight.forEach(p => { if(!p.acking) p.progress = Math.min(p.progress + 0.25, 1); });
+  // Arrived packets start ACK animation
+  s.inFlight.filter(p=>!p.acking && p.progress>=1).forEach(p=>{ p.acking=true; s.ackQueue.push({n:p.n, progress:0}); });
+  // Advance ACKs
+  s.ackQueue.forEach(a => a.progress = Math.min(a.progress + 0.3, 1));
+  // Process completed ACKs
+  const done = s.ackQueue.filter(a=>a.progress>=1);
+  if(done.length > 0) {
+    done.forEach(a => {
+      s.acked = Math.max(s.acked, a.n+1);
+      s.windowStart = s.acked;
+    });
+    s.ackQueue = s.ackQueue.filter(a=>a.progress<1);
+    s.inFlight  = s.inFlight.filter(p=>p.n>=s.windowStart);
+  }
+  const sending = s.inFlight.filter(p=>!p.acking).length;
+  document.getElementById('s1-status').textContent =
+    `Fenster: [${s.windowStart+1}–${Math.min(s.windowStart+ws,TOTAL_PKTS)}] · ACKed: ${s.acked} · Unterwegs: ${sending}`;
+}
+
+function drawV1() {
+  const [x, W, H] = prepC('c1', 320);
+  const s = v1State || {acked:0,windowStart:0,sent:0,inFlight:[],ackQueue:[]};
+  const ws = v1WS;
+
+  // Constants
+  const PAD = 48, PKT_W = (W - PAD*2) / TOTAL_PKTS;
+  const SENDER_Y = 68, RECV_Y = 240;
+  const WIRE_Y1 = SENDER_Y + 28, WIRE_Y2 = RECV_Y - 28;
+
+  // Labels
+  x.font=`700 14px ${SF()}`; x.textAlign='left'; x.fillStyle=TXT3();
+  x.fillText('SENDER',PAD,SENDER_Y-38);
+  x.fillText('EMPFÄNGER',PAD,RECV_Y+44);
+
+  // ── SENDER BUFFER ──
+  for(let i=0;i<TOTAL_PKTS;i++){
+    const bx = PAD + i*PKT_W, by = SENDER_Y - 22;
+    const bw = PKT_W - 3, bh = 36;
+    // color
+    let fill=BG2(), stroke=BRD(), textCol=TXT3();
+    if(i < s.acked){
+      fill='#EAF3DE'; stroke='#3B6D11'; textCol='#3B6D11';
+    } else if(i >= s.windowStart && i < s.windowStart+ws){
+      fill='#E6F1FB'; stroke='#185FA5'; textCol='#185FA5';
+    }
+    x.fillStyle=fill; x.strokeStyle=stroke; x.lineWidth=1.5;
+    x.beginPath(); x.roundRect(bx,by,bw,bh,4); x.fill(); x.stroke();
+    x.font=`700 13px ${SF()}`; x.fillStyle=textCol; x.textAlign='center';
+    x.fillText(i<s.acked?'✓':`P${i+1}`, bx+bw/2, by+22);
+  }
+
+  // ── WINDOW BRACKET ──
+  const wx0 = PAD + s.windowStart*PKT_W;
+  const wxW = Math.min(ws, TOTAL_PKTS-s.windowStart)*PKT_W - 3;
+  if(wxW > 0){
+    x.strokeStyle=cv('--lc4'); x.lineWidth=3;
+    x.beginPath();
+    x.moveTo(wx0,SENDER_Y-26); x.lineTo(wx0,SENDER_Y-34); x.lineTo(wx0+wxW,SENDER_Y-34); x.lineTo(wx0+wxW,SENDER_Y-26);
+    x.stroke();
+    x.font=`700 12px ${SF()}`; x.fillStyle=cv('--lc4'); x.textAlign='center';
+    x.fillText(`Window (${ws})`, wx0+wxW/2, SENDER_Y-38);
+  }
+
+  // ── RECEIVER BUFFER ──
+  for(let i=0;i<TOTAL_PKTS;i++){
+    const bx = PAD + i*PKT_W, by = RECV_Y - 14;
+    const bw = PKT_W - 3, bh = 28;
+    const recv = i < s.acked;
+    x.fillStyle=recv?'#EAF3DE':BG2();
+    x.strokeStyle=recv?'#3B6D11':BRD();
+    x.lineWidth=1.5;
+    x.beginPath(); x.roundRect(bx,by,bw,bh,3); x.fill(); x.stroke();
+    x.font=`600 12px ${SF()}`; x.fillStyle=recv?'#3B6D11':TXT3(); x.textAlign='center';
+    x.fillText(recv?'✓':`P${i+1}`, bx+bw/2, by+19);
+  }
+
+  // ── PACKETS IN FLIGHT ──
+  s.inFlight.forEach(p => {
+    if(p.acking) return;
+    const bx = PAD + p.n*PKT_W + PKT_W/2;
+    const py = WIRE_Y1 + (WIRE_Y2-WIRE_Y1)*p.progress;
+    x.shadowBlur=8; x.shadowColor=cv('--lc1');
+    x.fillStyle=cv('--lc1');
+    x.beginPath(); x.arc(bx, py, 12, 0, Math.PI*2); x.fill();
+    x.shadowBlur=0;
+    x.font=`700 10px ${SF()}`; x.fillStyle='#fff'; x.textAlign='center';
+    x.fillText(`P${p.n+1}`, bx, py+4);
+  });
+
+  // ── ACKs FLYING BACK ──
+  s.ackQueue.forEach(a => {
+    const bx = PAD + a.n*PKT_W + PKT_W/2;
+    const py = WIRE_Y2 + (WIRE_Y1-WIRE_Y2)*a.progress;
+    x.fillStyle=cv('--lc2');
+    x.beginPath(); x.arc(bx, py, 9, 0, Math.PI*2); x.fill();
+    x.font=`700 9px ${SF()}`; x.fillStyle='#fff'; x.textAlign='center';
+    x.fillText('ACK', bx, py+3);
+  });
+
+  // Dividing line
+  x.strokeStyle=BRD(); x.lineWidth=1; x.setLineDash([4,4]);
+  x.beginPath(); x.moveTo(PAD/2,(WIRE_Y1+WIRE_Y2)/2); x.lineTo(W-PAD/2,(WIRE_Y1+WIRE_Y2)/2); x.stroke();
+  x.setLineDash([]);
+}
+
+function drawV1Ptr() {
+  const [x, W, H] = prepC('c1-ptr', 70);
+  const s = v1State || {acked:0,windowStart:0,sent:0};
+  const ws = v1WS;
+  const PAD=48, PKT_W=(W-PAD*2)/TOTAL_PKTS;
+  const Y=36;
+
+  // draw compact packet strip
+  for(let i=0;i<TOTAL_PKTS;i++){
+    const bx=PAD+i*PKT_W, bw=PKT_W-2;
+    let fill=BG2(), stroke=BRD();
+    if(i<s.acked){fill='#EAF3DE';stroke='#3B6D11';}
+    else if(i<s.windowStart+ws){fill='#E6F1FB';stroke='#185FA5';}
+    x.fillStyle=fill; x.strokeStyle=stroke; x.lineWidth=1;
+    x.beginPath(); x.roundRect(bx,Y-10,bw,20,3); x.fill(); x.stroke();
+    x.font=`600 9px ${SF()}`; x.fillStyle=i<s.acked?'#3B6D11':i<s.windowStart+ws?'#185FA5':TXT3();
+    x.textAlign='center'; x.fillText(i+1, bx+bw/2, Y+4);
+  }
+  // Three pointers
+  const ptrs = [
+    {pos:s.acked, label:'SND.UNA', col:'#3B6D11'},
+    {pos:Math.min(s.sent,TOTAL_PKTS), label:'SND.NXT', col:cv('--lc1')},
+    {pos:Math.min(s.windowStart+ws,TOTAL_PKTS), label:'SND.WND', col:cv('--lc4')},
+  ];
+  ptrs.forEach((p,i)=>{
+    const px=PAD+p.pos*PKT_W;
+    x.strokeStyle=p.col; x.lineWidth=2;
+    x.beginPath(); x.moveTo(px,Y-12); x.lineTo(px,Y+12); x.stroke();
+    x.font=`600 9px ${SF()}`; x.fillStyle=p.col; x.textAlign='center';
+    x.fillText(p.label, px, Y+(i%2===0?-16:22));
+  });
+}
+
+/* ══════════════════════════════════
+   VIEW 2 — PAKETVERLUST / Go-Back-N
+══════════════════════════════════ */
+let v2LossPkt = 3;  // which packet to drop (0-indexed)
+let v2Events  = []; // rendered events
+let v2Step_n  = 0;
+let v2AnimId  = null;
+let v2AutoPlay= false;
+
+function buildLossBtns() {
+  const c = document.getElementById('loss-btns');
+  c.innerHTML = '';
+  for(let i=1;i<=8;i++){
+    const b=document.createElement('button');
+    b.className='cbtn'+(i-1===v2LossPkt?' act':'');
+    b.textContent=`P${i}`;
+    b.style.padding='6px 12px';b.style.fontSize='14px';
+    if(i-1===v2LossPkt){b.style.background=cv('--cx')||'#c0392b';b.style.color='#fff';b.style.borderColor=cv('--cx')||'#c0392b';}
+    b.onclick=()=>{ v2LossPkt=i-1; buildLossBtns(); v2Reset(); };
+    c.appendChild(b);
+  }
+}
+
+function v2Reset() {
+  v2AutoPlay=false;
+  if(v2AnimId){cancelAnimationFrame(v2AnimId);v2AnimId=null;}
+  v2Events=[];
+  v2Step_n=0;
+  buildV2Events();
+  document.getElementById('s2-status').textContent=`Verlust bei Paket ${v2LossPkt+1} simuliert → Starten`;
+  drawV2(0);
+}
+function v2Start(){v2AutoPlay=true;v2AnimLoop(0);}
+function v2Step(){
+  v2AutoPlay=false;
+  if(v2AnimId){cancelAnimationFrame(v2AnimId);v2AnimId=null;}
+  v2Step_n=Math.min(v2Step_n+1,v2Events.length);
+  drawV2(v2Step_n);
+}
+
+function v2AnimLoop(frame){
+  const FRAMES_PER_STEP=18;
+  const step=Math.floor(frame/FRAMES_PER_STEP);
+  const prog=(frame%FRAMES_PER_STEP)/FRAMES_PER_STEP;
+  drawV2(step, prog);
+  if(step<v2Events.length && v2AutoPlay)
+    v2AnimId=requestAnimationFrame(()=>v2AnimLoop(frame+1));
+  else if(step>=v2Events.length)
+    document.getElementById('s2-status').textContent='✓ Retransmission abgeschlossen';
+}
+
+function buildV2Events(){
+  // Simulate sending pkts 1-8, loss at v2LossPkt
+  v2Events=[];
+  const WS=4;
+  const PKTS=8;
+  // Phase 1: send window
+  for(let i=0;i<WS;i++) v2Events.push({type:'send',n:i});
+  // Deliver all except lost
+  for(let i=0;i<WS;i++){
+    if(i===v2LossPkt) v2Events.push({type:'lost',n:i});
+    else v2Events.push({type:'ack',n:i,ackNr:v2LossPkt}); // ACK = seq of lost pkt
+  }
+  // Retransmit from lost packet
+  for(let i=v2LossPkt;i<PKTS;i++) v2Events.push({type:'retransmit',n:i});
+  for(let i=v2LossPkt;i<PKTS;i++) v2Events.push({type:'ack-ok',n:i});
+}
+
+function drawV2(step, prog=1) {
+  const [x, W, H] = prepC('c2', 460);
+  const WS=4, PKTS=8;
+  const PAD=60, PKT_W=(W-PAD*2)/PKTS;
+  const SENDER_Y=55, RECV_Y=H-70;
+  const WIRE1=SENDER_Y+36, WIRE2=RECV_Y-36;
+
+  // Labels
+  x.font=`700 14px ${SF()}`; x.textAlign='left'; x.fillStyle=TXT3();
+  x.fillText('SENDER',PAD,SENDER_Y-28); x.fillText('EMPFÄNGER',PAD,RECV_Y+52);
+
+  // Sender + receiver buffers
+  const acked=new Set(), lost=new Set(), retrans=new Set();
+  const events=v2Events.slice(0,step);
+  events.forEach(e=>{
+    if(e.type==='ack-ok') acked.add(e.n);
+    if(e.type==='lost')   lost.add(e.n);
+    if(e.type==='retransmit') retrans.add(e.n);
+  });
+  const sent=new Set(events.filter(e=>e.type==='send'||e.type==='retransmit').map(e=>e.n));
+
+  for(let i=0;i<PKTS;i++){
+    // Sender
+    let sf=BG2(),ss=BRD(),sc=TXT3();
+    if(acked.has(i)){sf='#EAF3DE';ss='#3B6D11';sc='#3B6D11';}
+    else if(retrans.has(i)){sf='#EEEDFE';ss='#534AB7';sc='#534AB7';}
+    else if(sent.has(i)){sf='#FAEEDA';ss='#854F0B';sc='#854F0B';}
+    const bx=PAD+i*PKT_W, bw=PKT_W-4;
+    x.fillStyle=sf;x.strokeStyle=ss;x.lineWidth=1.5;
+    x.beginPath();x.roundRect(bx,SENDER_Y-16,bw,32,4);x.fill();x.stroke();
+    x.font=`700 12px ${SF()}`;x.fillStyle=sc;x.textAlign='center';
+    x.fillText(acked.has(i)?'✓':`P${i+1}`,bx+bw/2,SENDER_Y+4);
+
+    // Receiver
+    let rf=BG2(),rs=BRD(),rc=TXT3();
+    if(acked.has(i)){rf='#EAF3DE';rs='#3B6D11';rc='#3B6D11';}
+    else if(lost.has(i)){rf='#fef0ee';rs='#c0392b';rc='#c0392b';}
+    x.fillStyle=rf;x.strokeStyle=rs;x.lineWidth=1.5;
+    x.beginPath();x.roundRect(bx,RECV_Y-14,bw,28,3);x.fill();x.stroke();
+    x.font=`600 12px ${SF()}`;x.fillStyle=rc;x.textAlign='center';
+    x.fillText(acked.has(i)?'✓':lost.has(i)?'✗':`P${i+1}`,bx+bw/2,RECV_Y+4);
+  }
+
+  // Sequence diagram: draw events as horizontal arrows on timeline
+  const eventsToShow=v2Events.slice(0,step);
+  const DIAG_TOP=SENDER_Y+44, DIAG_BOT=RECV_Y-44;
+  const DIAG_H=DIAG_BOT-DIAG_TOP;
+  const EVT_H=DIAG_H/Math.max(eventsToShow.length,1);
+
+  eventsToShow.forEach((e,i)=>{
+    const ay=DIAG_TOP+i*EVT_H+EVT_H*0.5;
+    let col='#888', label='', fromX=0, toX=0, dashed=false;
+    if(e.type==='send'){col=cv('--lc1');label=`P${e.n+1} (SeqNr ${(e.n)*100+100})`;fromX=PAD+e.n*PKT_W+PKT_W/2;toX=PAD+e.n*PKT_W+PKT_W/2+W*0.55;}
+    if(e.type==='lost'){col='#c0392b';label=`P${e.n+1} verloren ✗`;fromX=PAD+e.n*PKT_W+PKT_W/2;toX=fromX+W*0.28;dashed=true;}
+    if(e.type==='ack'){col=cv('--lc2');label=`ACK ${v2LossPkt*100+100} (warte auf P${v2LossPkt+1})`;fromX=W-PAD-PKT_W/2;toX=PAD+e.n*PKT_W+PKT_W/2-W*0.1;}
+    if(e.type==='retransmit'){col=cv('--lc6');label=`Retransmit P${e.n+1}`;fromX=PAD+e.n*PKT_W+PKT_W/2;toX=fromX+W*0.5;dashed=false;}
+    if(e.type==='ack-ok'){col=cv('--lc2');label=`ACK ${(e.n+1)*100+100} ✓`;fromX=W-PAD-PKT_W/2;toX=PAD+e.n*PKT_W+PKT_W/2;}
+
+    // Arrow
+    x.strokeStyle=col;x.lineWidth=2;x.setLineDash(dashed?[5,3]:[]);
+    x.beginPath();x.moveTo(fromX,ay);x.lineTo(toX,ay);x.stroke();x.setLineDash([]);
+    // Arrowhead
+    const dir=toX>fromX?1:-1;
+    x.fillStyle=col;x.beginPath();
+    x.moveTo(toX,ay);x.lineTo(toX-dir*10,ay-5);x.lineTo(toX-dir*10,ay+5);x.fill();
+    // Label
+    x.font=`12px ${SF()}`;x.fillStyle=col;x.textAlign='center';
+    x.fillText(label,(fromX+toX)/2,ay-6);
+  });
+
+  // Status
+  const lastEvt=eventsToShow[eventsToShow.length-1];
+  if(lastEvt){
+    let msg='';
+    if(lastEvt.type==='send') msg=`P${lastEvt.n+1} gesendet`;
+    if(lastEvt.type==='lost') msg=`P${lastEvt.n+1} ging verloren — kein ACK`;
+    if(lastEvt.type==='ack')  msg=`Empfänger sendet ACK ${v2LossPkt*100+100} — wartet auf P${v2LossPkt+1}`;
+    if(lastEvt.type==='retransmit') msg=`Go-Back-N: P${lastEvt.n+1} wird erneut gesendet`;
+    if(lastEvt.type==='ack-ok') msg=`P${lastEvt.n+1} erfolgreich bestätigt ✓`;
+    document.getElementById('s2-status').textContent=msg;
+  }
+}
+
+/* ══════════════════════════════════
+   VIEW 3 — FLOW CONTROL
+══════════════════════════════════ */
+let v3AnimId=null, v3T=0;
+
+const V3_PHASES = [
+  {label:'Normal',      rwnd:8, desc:'Empfangspuffer fast leer — großes Fenster'},
+  {label:'Belastet',    rwnd:5, desc:'Puffer füllt sich — rwnd sinkt auf 5'},
+  {label:'Fast voll',   rwnd:2, desc:'Puffer fast voll — rwnd = 2, Sender verlangsamt'},
+  {label:'Voll (Stop)', rwnd:0, desc:'Puffer voll — rwnd = 0, Sender pausiert'},
+  {label:'Erholt',      rwnd:3, desc:'Puffer verarbeitet Daten — rwnd = 3, Sender startet'},
+  {label:'Normal',      rwnd:8, desc:'Puffer leer — Fenster öffnet sich wieder'},
+];
+
+function v3Reset(){
+  if(v3AnimId){cancelAnimationFrame(v3AnimId);v3AnimId=null;}
+  v3T=0;
+  document.getElementById('s3-status').textContent='Bereit';
+  drawV3(0,0);
+}
+function v3Start(){v3T=0;v3AnimLoop();}
+function v3AnimLoop(){
+  v3T++;
+  const PHASE_LEN=120;
+  const phaseIdx=Math.floor(v3T/PHASE_LEN)%V3_PHASES.length;
+  const phaseProg=(v3T%PHASE_LEN)/PHASE_LEN;
+  drawV3(phaseIdx,phaseProg);
+  document.getElementById('s3-status').textContent=V3_PHASES[phaseIdx].desc;
+  v3AnimId=requestAnimationFrame(v3AnimLoop);
+}
+
+function drawV3(phaseIdx, phaseProg) {
+  const [x, W, H] = prepC('c3', 380);
+  const phase=V3_PHASES[phaseIdx];
+  const nextPhase=V3_PHASES[(phaseIdx+1)%V3_PHASES.length];
+  const rwnd=phase.rwnd+(nextPhase.rwnd-phase.rwnd)*phaseProg;
+
+  const PAD=60, MAX_WS=8;
+  const SENDER_Y=70, RECV_Y=H-80;
+  const BUF_CAP=8;
+
+  // ── Sender window bar ──
+  x.font=`700 14px ${SF()}`; x.textAlign='left'; x.fillStyle=TXT3();
+  x.fillText('SENDER',PAD, SENDER_Y-40);
+
+  const WS_W=(W-PAD*2)/MAX_WS;
+  for(let i=0;i<MAX_WS;i++){
+    const bx=PAD+i*WS_W, bw=WS_W-3, by=SENDER_Y-20;
+    const active=i<Math.round(rwnd);
+    x.fillStyle=active?'#E6F1FB':BG2();
+    x.strokeStyle=active?cv('--lc4'):BRD();
+    x.lineWidth=active?2:1;
+    x.beginPath();x.roundRect(bx,by,bw,36,4);x.fill();x.stroke();
+    x.font=`700 12px ${SF()}`;x.fillStyle=active?cv('--lc4'):TXT3();
+    x.textAlign='center';
+    x.fillText(`P${i+1}`,bx+bw/2,by+22);
+  }
+  // Window bracket
+  const winW=Math.max(rwnd,0.1)*WS_W;
+  x.strokeStyle=cv('--lc4');x.lineWidth=3;
+  x.beginPath();
+  x.moveTo(PAD,SENDER_Y-26);x.lineTo(PAD,SENDER_Y-34);
+  x.lineTo(PAD+winW-3,SENDER_Y-34);x.lineTo(PAD+winW-3,SENDER_Y-26);
+  x.stroke();
+  x.font=`700 13px ${SF()}`;x.fillStyle=cv('--lc4');x.textAlign='center';
+  x.fillText(`rwnd = ${Math.round(rwnd)}`,PAD+winW/2,SENDER_Y-38);
+
+  // ── ACK with rwnd flying back ──
+  const ACK_Y=SENDER_Y+26+(RECV_Y-26-SENDER_Y-26)*phaseProg;
+  x.fillStyle=cv('--lc2');x.shadowBlur=8;x.shadowColor=cv('--lc2');
+  x.beginPath();x.arc(W/2,ACK_Y,14,0,Math.PI*2);x.fill();
+  x.shadowBlur=0;
+  x.font=`700 10px ${SF()}`;x.fillStyle='#fff';x.textAlign='center';
+  x.fillText(`ACK`,W/2,ACK_Y-2);
+  x.fillText(`rwnd=${Math.round(rwnd)}`,W/2,ACK_Y+10);
+
+  // ── Receiver buffer ──
+  x.font=`700 14px ${SF()}`;x.textAlign='left';x.fillStyle=TXT3();
+  x.fillText('EMPFÄNGER',PAD,RECV_Y-40);
+
+  const filled=Math.round((1-rwnd/8)*8);
+  const BUF_W=(W-PAD*2)/BUF_CAP;
+  for(let i=0;i<BUF_CAP;i++){
+    const bx=PAD+i*BUF_W, bw=BUF_W-3, by=RECV_Y-20;
+    const isFilled=i<filled;
+    let fill=isFilled?'#FAEEDA':BG2();
+    let stroke=isFilled?'#854F0B':BRD();
+    if(Math.round(rwnd)===0){fill='#fef0ee';stroke='#c0392b';}
+    x.fillStyle=fill;x.strokeStyle=stroke;x.lineWidth=1.5;
+    x.beginPath();x.roundRect(bx,by,bw,36,4);x.fill();x.stroke();
+    x.font=`11px ${SF()}`;x.fillStyle=isFilled?'#854F0B':TXT3();x.textAlign='center';
+    x.fillText(isFilled?'DATA':'frei',bx+bw/2,by+22);
+  }
+  // Puffer label
+  x.font=`700 13px ${SF()}`;x.fillStyle=Math.round(rwnd)===0?'#c0392b':'#854F0B';x.textAlign='center';
+  const fillPct=Math.round(filled/BUF_CAP*100);
+  x.fillText(`Puffer ${fillPct}% belegt${Math.round(rwnd)===0?' — STOP':''}`,W/2,RECV_Y+30);
+
+  // Phase progress bar
+  x.fillStyle=BG2();x.strokeStyle=BRD();x.lineWidth=1;
+  x.beginPath();x.roundRect(PAD,H-36,W-PAD*2,14,4);x.fill();x.stroke();
+  const progCol=Math.round(rwnd)===0?'#c0392b':cv('--lc4');
+  x.fillStyle=progCol;
+  x.beginPath();x.roundRect(PAD,H-36,(W-PAD*2)*(rwnd/8),14,4);x.fill();
+  x.font=`12px ${SF()}`;x.fillStyle=TXT3();x.textAlign='center';
+  x.fillText(phase.label+' — rwnd = '+Math.round(rwnd),W/2,H-16);
+}
+
+/* ══ INIT ══ */
+buildLossBtns();
+v1Reset();
+v2Reset();
+v3Reset();
+window.addEventListener('resize',()=>{ drawV1(); drawV1Ptr(); drawV2(v2Step_n); drawV3(0,0); });
+</script>
+</body>
+</html>

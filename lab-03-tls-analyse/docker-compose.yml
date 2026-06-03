@@ -1,0 +1,51 @@
+services:
+
+  # ─── HTTPS-Server (nginx mit selbst-signiertem Zertifikat) ─────────────────
+  server:
+    container_name: lab03-server
+    image: nginx:alpine
+    hostname: server
+    networks:
+      lab-net:
+        ipv4_address: 10.30.0.10
+    volumes:
+      - ./configs/server/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./configs/server/certs:/etc/nginx/certs:ro
+      - ./configs/server/html:/usr/share/nginx/html:ro
+    restart: unless-stopped
+
+  # ─── Client (curl + openssl + tshark für Analyse) ──────────────────────────
+  client:
+    container_name: lab03-client
+    image: nicolaka/netshoot
+    hostname: client
+    networks:
+      lab-net:
+        ipv4_address: 10.30.0.20
+    volumes:
+      - ./configs/client/lab-tasks.sh:/lab-tasks.sh:ro
+    command: sleep infinity
+    restart: unless-stopped
+
+  # ─── Analyse-Station (tshark + ssldump) ────────────────────────────────────
+  analyst:
+    container_name: lab03-analyst
+    image: nicolaka/netshoot
+    hostname: analyst
+    networks:
+      lab-net:
+        ipv4_address: 10.30.0.30
+    cap_add:
+      - NET_ADMIN
+      - NET_RAW
+    command: sleep infinity
+    restart: unless-stopped
+
+networks:
+  lab-net:
+    name: lab03-net
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 10.30.0.0/24
+          gateway: 10.30.0.1

@@ -1,0 +1,9 @@
+# dnsspoof Hosts-Datei  –  Lab 05
+# Format:  <IP>  <name-pattern>
+# Jede DNS-Anfrage nach diesen Namen wird mit der IP des Angreifer-Webservers
+# (web-fake, 10.50.0.99) beantwortet.
+
+10.50.0.99   bank.local
+10.50.0.99   www.bank.local
+10.50.0.99   login.bank.local
+10.50.0.99   *.bank.local

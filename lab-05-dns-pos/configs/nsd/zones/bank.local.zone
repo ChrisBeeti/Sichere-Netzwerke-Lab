@@ -1,0 +1,17 @@
+$ORIGIN bank.local.
+$TTL 60
+
+@   IN  SOA ns.bank.local. admin.bank.local. (
+        2026060401  ; Serial
+        3600        ; Refresh
+        900         ; Retry
+        604800      ; Expire
+        60 )        ; Minimum TTL
+
+@           IN  NS      ns.bank.local.
+ns          IN  A       10.50.0.54
+
+; ---- Das echte Banking-Portal (web-real) ----
+@           IN  A       10.50.0.20
+www         IN  A       10.50.0.20
+login       IN  A       10.50.0.20

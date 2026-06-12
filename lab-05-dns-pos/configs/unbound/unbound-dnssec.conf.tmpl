@@ -1,0 +1,49 @@
+# =============================================================================
+#  unbound-dnssec.conf.tmpl  –  Lab 05  (Stufe 3: MIT DNSSEC-Validierung)
+#  Wird von /scripts/enable-dnssec.sh aktiviert. __TRUST_ANCHOR__ wird dabei
+#  durch den KSK (DNSKEY 257) der signierten Zone bank.local ersetzt.
+# =============================================================================
+
+server:
+    interface: 0.0.0.0
+    port: 53
+    do-ip4: yes
+    do-udp: yes
+    do-tcp: yes
+    access-control: 10.50.0.0/24 allow
+    access-control: 127.0.0.0/8 allow
+
+    # Validator + Iterator -> gefaelschte, unsignierte Antworten werden
+    # verworfen. Folge: kein Cache-Poisoning mehr (Szenario B), Resolver
+    # liefert SERVFAIL statt der falschen IP.
+    module-config: "validator iterator"
+    val-permissive-mode: no
+    harden-dnssec-stripped: yes
+
+    cache-min-ttl: 0
+    cache-max-ttl: 86400
+    verbosity: 1
+    log-queries: yes
+    use-syslog: no
+    logfile: ""
+    chroot: ""
+    username: ""
+    directory: "/etc/unbound"
+    pidfile: "/etc/unbound/unbound.pid"
+
+    # Explizite Vertrauensverankerung fuer die Insel-Zone bank.local.
+    # (Kein Pfad zur echten Root noetig – bank.local ist ein abgeschlossener
+    #  Sicherungsbereich.)
+    trust-anchor: "__TRUST_ANCHOR__"
+
+remote-control:
+    control-enable: yes
+    control-interface: 127.0.0.1
+    server-key-file:  "/etc/unbound/unbound_server.key"
+    server-cert-file: "/etc/unbound/unbound_server.pem"
+    control-key-file: "/etc/unbound/unbound_control.key"
+    control-cert-file:"/etc/unbound/unbound_control.pem"
+
+stub-zone:
+    name: "bank.local."
+    stub-addr: 10.50.0.54

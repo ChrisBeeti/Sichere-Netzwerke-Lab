@@ -1,0 +1,115 @@
+services:
+
+  # ─── Opfer 1 (Stub-Resolver, nutzt unbound als DNS) ────────────────────────
+  victim:
+    container_name: lab05-victim
+    image: ubuntu:22.04
+    hostname: victim
+    networks:
+      lab05-net:
+        ipv4_address: 10.50.0.10
+    dns:
+      - 10.50.0.53
+    cap_add:
+      - NET_ADMIN
+    command: sleep infinity
+    restart: unless-stopped
+
+  # ─── Opfer 2 (zeigt Cache-Effekt: bekommt vergiftete Antwort aus dem Cache) ─
+  victim2:
+    container_name: lab05-victim2
+    image: ubuntu:22.04
+    hostname: victim2
+    networks:
+      lab05-net:
+        ipv4_address: 10.50.0.11
+    dns:
+      - 10.50.0.53
+    command: sleep infinity
+    restart: unless-stopped
+
+  # ─── Rekursiver, cachender Resolver mit (zuschaltbarer) DNSSEC-Validierung ──
+  resolver:
+    container_name: lab05-resolver
+    image: alpine:latest
+    hostname: resolver
+    networks:
+      lab05-net:
+        ipv4_address: 10.50.0.53
+    cap_add:
+      - NET_ADMIN
+    volumes:
+      - ./configs/unbound:/configs/unbound:ro
+      - ./scripts:/scripts:ro
+      - lab05-shared:/shared
+    command: ["/bin/sh", "/scripts/run-unbound.sh"]
+    restart: unless-stopped
+
+  # ─── Autoritativer Name-Server für die Zone bank.local (DNSSEC-signiert) ────
+  auth-dns:
+    container_name: lab05-auth-dns
+    image: alpine:latest
+    hostname: auth-dns
+    networks:
+      lab05-net:
+        ipv4_address: 10.50.0.54
+    cap_add:
+      - NET_ADMIN
+    volumes:
+      - ./configs/nsd:/configs/nsd:ro
+      - ./scripts:/scripts:ro
+      - lab05-shared:/shared
+    command: ["/bin/sh", "/scripts/run-nsd.sh"]
+    restart: unless-stopped
+
+  # ─── Echtes Banking-Portal ─────────────────────────────────────────────────
+  web-real:
+    container_name: lab05-web-real
+    image: nginx:alpine
+    hostname: web-real
+    networks:
+      lab05-net:
+        ipv4_address: 10.50.0.20
+    volumes:
+      - ./configs/web-real:/usr/share/nginx/html:ro
+    restart: unless-stopped
+
+  # ─── Phishing-Klon des Angreifers ──────────────────────────────────────────
+  web-fake:
+    container_name: lab05-web-fake
+    image: nginx:alpine
+    hostname: web-fake
+    networks:
+      lab05-net:
+        ipv4_address: 10.50.0.99
+    volumes:
+      - ./configs/web-fake:/usr/share/nginx/html:ro
+    restart: unless-stopped
+
+  # ─── Angreifer (arpspoof + dnsspoof aus dsniff) ────────────────────────────
+  attacker:
+    container_name: lab05-attacker
+    image: kalilinux/kali-rolling
+    hostname: attacker
+    networks:
+      lab05-net:
+        ipv4_address: 10.50.0.66
+    cap_add:
+      - NET_ADMIN
+      - NET_RAW
+    sysctls:
+      # Forwarding AUS: der echte Resolver/Auth-Server hört die Anfrage nie,
+      # dnsspoof ist die einzige Antwortquelle -> deterministische Fälschung.
+      net.ipv4.ip_forward: 0
+    volumes:
+      - ./configs/attacker:/attacker:ro
+      - ./scripts:/scripts:ro
+    command: sleep infinity
+    restart: unless-stopped
+
+networks:
+  lab05-net:
+    external: true
+
+volumes:
+  lab05-shared:

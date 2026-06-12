@@ -9,7 +9,7 @@ services:
       lab-net:
         ipv4_address: 10.30.0.10
     volumes:
-      - ./configs/server/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./configs/server/fix_nginx.conf:/etc/nginx/nginx.conf:ro
       - ./configs/server/certs:/etc/nginx/certs:ro
       - ./configs/server/html:/usr/share/nginx/html:ro
     restart: unless-stopped

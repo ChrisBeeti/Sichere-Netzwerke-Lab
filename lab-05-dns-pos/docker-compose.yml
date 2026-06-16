@@ -3,7 +3,8 @@ services:
   # ─── Opfer 1 (Stub-Resolver, nutzt unbound als DNS) ────────────────────────
   victim:
     container_name: lab05-victim
-    image: ubuntu:22.04
+    build: ./configs/victim
+    image: lab05-victim:latest
     hostname: victim
     networks:
       lab05-net:
@@ -18,7 +19,8 @@ services:
   # ─── Opfer 2 (zeigt Cache-Effekt: bekommt vergiftete Antwort aus dem Cache) ─
   victim2:
     container_name: lab05-victim2
-    image: ubuntu:22.04
+    build: ./configs/victim
+    image: lab05-victim:latest
     hostname: victim2
     networks:
       lab05-net:
@@ -86,7 +88,7 @@ services:
       - ./configs/web-fake:/usr/share/nginx/html:ro
     restart: unless-stopped
 
-  # ─── Angreifer (arpspoof + dnsspoof aus dsniff) ────────────────────────────
+  # ─── Angreifer Szenario A (ip_forward=0): dnsspoof antwortet direkt ──────────
   attacker:
     container_name: lab05-attacker
     image: kalilinux/kali-rolling
@@ -98,14 +100,33 @@ services:
       - NET_ADMIN
       - NET_RAW
     sysctls:
-      # Forwarding AUS: der echte Resolver/Auth-Server hört die Anfrage nie,
-      # dnsspoof ist die einzige Antwortquelle -> deterministische Fälschung.
       net.ipv4.ip_forward: 0
     volumes:
       - ./configs/attacker:/attacker:ro
       - ./scripts:/scripts:ro
     command: sleep infinity
-    restart: unless-stopped
+    restart: "no"
+
+  # ─── Angreifer Szenario B/C (ip_forward=1): Pakete werden weitergeleitet ────
+  attacker-fwd:
+    container_name: lab05-attacker-fwd
+    image: kalilinux/kali-rolling
+    hostname: attacker
+    networks:
+      lab05-net:
+        ipv4_address: 10.50.0.66
+    cap_add:
+      - NET_ADMIN
+      - NET_RAW
+    sysctls:
+      net.ipv4.ip_forward: 1
+    volumes:
+      - ./configs/attacker:/attacker:ro
+      - ./scripts:/scripts:ro
+    command: sleep infinity
+    restart: "no"
+    profiles:
+      - fwd
 
 networks:
   lab05-net:

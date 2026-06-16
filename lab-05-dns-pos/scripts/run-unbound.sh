@@ -12,8 +12,5 @@ mkdir -p /etc/unbound
 cp /configs/unbound/unbound.conf            /etc/unbound/unbound.conf
 cp /configs/unbound/unbound-dnssec.conf.tmpl /etc/unbound/unbound-dnssec.conf.tmpl
 
-echo "[resolver] Erzeuge Remote-Control-Schluessel (fuer dump_cache) ..."
-unbound-control-setup -d /etc/unbound >/dev/null 2>&1 || true
-
 echo "[resolver] Starte unbound  (Stufe 1+2: OHNE DNSSEC-Validierung)"
 exec unbound -d -c /etc/unbound/unbound.conf

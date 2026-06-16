@@ -98,6 +98,12 @@ Seite (real/fake): ______________________
 
 Öffne **drei Terminals** auf dem Host. In Terminal 1 und 2 läuft je eine Richtung des ARP-Spoofings, in Terminal 3 die DNS-Fälschung.
 
+Stelle zunächst sicher, dass IP-Forwarding auf dem Angreifer **aus** ist — der Angreifer soll DNS-Anfragen abfangen, nicht weiterleiten:
+
+```bash
+./switch-attacker.sh a
+```
+
 **Terminal 1**
 
 ```bash
@@ -146,6 +152,12 @@ Jetzt greift der Angreifer eine Stelle weiter „oben" an — zwischen `resolver
 
 ```bash
 docker exec lab05-resolver unbound-control flush_zone bank.local.
+```
+
+Diesmal muss IP-Forwarding auf dem Angreifer **an** sein. In Szenario A antwortete der Angreifer direkt auf die DNS-Anfrage des Opfers. Hier sitzt er zwischen Resolver und autoritativem Server — der Resolver muss weiter funktionieren und normale TCP/IP-Pakete (z.B. HTTP des Opfers) durchkommen. Nur die DNS-Antwort vom auth-dns soll gefälscht werden:
+
+```bash
+./switch-attacker.sh b
 ```
 
 Drei Terminals — Terminal 1 und 2 für das ARP-Spoofing zwischen Resolver und autoritativem Server, Terminal 3 für die DNS-Fälschung.
@@ -205,6 +217,12 @@ Du bist jetzt die Verteidigung. Schalte am Resolver die Signaturprüfung ein:
 
 ```bash
 docker exec lab05-resolver /scripts/enable-dnssec.sh
+```
+
+Stelle sicher, dass IP-Forwarding am Angreifer noch **an** ist (gleiche Bedingungen wie Szenario B — der Angriff läuft weiter):
+
+```bash
+./switch-attacker.sh b
 ```
 
 Wiederhole **Szenario B** (Cache ist durch das Skript bereits geleert). Lass dann das Opfer auflösen — diesmal mit `dig`, um den Status zu sehen:
